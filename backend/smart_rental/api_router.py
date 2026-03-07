@@ -1,12 +1,13 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 
-from properties.views import PropertyViewSet
+from properties.views import PropertyInquiryViewSet, PropertyViewSet
 from bookings.views import BookingViewSet
 from users.views import CurrentUserView, LoginView, LogoutView, RegisterView
 
 router = DefaultRouter()
 router.register(r'properties', PropertyViewSet)
+router.register(r'property-inquiries', PropertyInquiryViewSet, basename='property-inquiry')
 router.register(r'bookings', BookingViewSet, basename='booking')
 
 urlpatterns = [

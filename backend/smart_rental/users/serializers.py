@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import authenticate
+from django.contrib.auth.password_validation import validate_password
 from .models import CustomUser
 
 
@@ -22,11 +23,19 @@ class RegisterSerializer(serializers.ModelSerializer):
         model = CustomUser
         fields = ("username", "email", "password", "first_name", "last_name", "role")
 
+    def validate_password(self, value: str) -> str:
+        """
+        Run Django's built-in password validators to enforce strength
+        rules (length, common passwords, numeric-only, similarity, etc.).
+        """
+        validate_password(value)
+        return value
+
     def create(self, validated_data):
         user = CustomUser.objects.create_user(
             username=validated_data["username"],
             email=validated_data.get("email", ""),
-            password=validated_data["password"],
+            password=validated_data["password"],  # hashed internally
             first_name=validated_data.get("first_name", ""),
             last_name=validated_data.get("last_name", ""),
             role=validated_data["role"],
@@ -39,12 +48,32 @@ class LoginSerializer(serializers.Serializer):
     password = serializers.CharField(style={"input_type": "password"})
 
     def validate(self, data):
+        username_or_email = data["username"]
+        password = data["password"]
+
+        # First try to authenticate using the value as a username
         user = authenticate(
             request=self.context.get("request"),
-            username=data["username"],
-            password=data["password"],
+            username=username_or_email,
+            password=password,
         )
+
+        # If that fails, try treating the value as an email
+        if not user:
+            try:
+                user_obj = CustomUser.objects.get(email=username_or_email)
+            except CustomUser.DoesNotExist:
+                user_obj = None
+
+            if user_obj:
+                user = authenticate(
+                    request=self.context.get("request"),
+                    username=user_obj.username,
+                    password=password,
+                )
+
         if not user:
             raise serializers.ValidationError("Invalid username or password.")
+
         data["user"] = user
         return data

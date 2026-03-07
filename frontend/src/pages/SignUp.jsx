@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { register } from '../lib/api'
+import { useAuth } from '../lib/authContext'
 import './Auth.css'
 
 export default function SignUp() {
   const navigate = useNavigate()
+  const { setUser } = useAuth()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [form, setForm] = useState({
@@ -36,7 +38,7 @@ export default function SignUp() {
     }
     setLoading(true)
     try {
-      await register({
+      const user = await register({
         username: form.username.trim(),
         email: form.email.trim() || undefined,
         password: form.password,
@@ -44,7 +46,8 @@ export default function SignUp() {
         last_name: form.last_name.trim() || undefined,
         role: form.role,
       })
-      navigate('/home')
+      setUser(user)
+      navigate(user?.role === 'landlord' ? '/dashboard' : '/home')
     } catch (err) {
       setError(err.message || 'Registration failed. Please try again.')
     } finally {

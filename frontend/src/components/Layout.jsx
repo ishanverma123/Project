@@ -1,18 +1,41 @@
-import { Link, Outlet, useLocation } from 'react-router-dom'
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { useAuth } from '../lib/authContext'
 import './Layout.css'
 
 export default function Layout() {
   const location = useLocation()
+  const navigate = useNavigate()
+  const { user, logout } = useAuth()
+
   const isAuthPage = location.pathname === '/' || location.pathname === '/signin'
+  const homeHref = user?.role === 'landlord' ? '/dashboard' : '/home'
+
+  const handleSignOut = async () => {
+    await logout()
+    navigate('/')
+  }
 
   return (
     <div className="layout">
       <header className={`layout-header ${isAuthPage ? 'layout-header-auth' : ''}`}>
-        <Link to={isAuthPage ? '/' : '/home'} className="logo">
+        <Link to={isAuthPage ? '/' : homeHref} className="logo">
           Smart Rental
         </Link>
         <nav>
-          {isAuthPage ? (
+          {user ? (
+            <>
+              {!isAuthPage && (
+                <>
+                  {user.role === 'tenant' && <Link to="/home">Home</Link>}
+                  <Link to="/dashboard">Dashboard</Link>
+                </>
+              )}
+              <span className="navbar-username">Hi, {user.first_name} {user.last_name}</span>
+              <button type="button" className="navbar-signout" onClick={handleSignOut}>
+                Sign out
+              </button>
+            </>
+          ) : isAuthPage ? (
             location.pathname === '/' ? (
               <Link to="/signin">Sign in</Link>
             ) : (

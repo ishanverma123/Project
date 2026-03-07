@@ -9,8 +9,9 @@
   align-items: center;
   justify-content: space-between;
   padding: 0.875rem 1.5rem;
-  background: #ffffff;
-  border-bottom: 1px solid #e5e7eb;
+  background: #020617;
+  border-bottom: 1px solid #1f2937;
+  color: #f9fafb;
 }
 
 .layout-header-auth {
@@ -22,12 +23,12 @@
   font-size: 1.25rem;
   font-weight: 700;
   text-decoration: none;
-  color: #b91c1c;
+  color: #f9fafb;
   letter-spacing: -0.02em;
 }
 
 .layout-header-auth .logo {
-  color: #f8fafc;
+  color: #f9fafb;
 }
 
 .layout-header nav {
@@ -38,20 +39,38 @@
 
 .layout-header nav a {
   text-decoration: none;
-  color: #6b7280;
+  color: #e5e7eb;
   font-size: 0.9rem;
   font-weight: 500;
   transition: color 0.2s;
 }
 
 .layout-header nav a:hover {
-  color: #b91c1c;
+  color: #fecaca;
 }
 
 .layout-main {
   flex: 1;
   padding: 1.5rem;
-  background: #f9fafb;
+  background: #020617;
+  color: #f9fafb;
+}
+
+.navbar-username {
+  font-size: 0.9rem;
+  color: #f9fafb;
+}
+
+.navbar-signout {
+  background: transparent;
+  border: 1px solid #f97373;
+  color: #f9fafb;
+  padding: 0.4rem 0.9rem;
+}
+
+.navbar-signout:hover {
+  background: #b91c1c;
+  border-color: #fecaca;
 }
 
 .layout-main-auth {

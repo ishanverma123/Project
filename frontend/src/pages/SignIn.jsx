@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { login } from '../lib/api'
+import { useAuth } from '../lib/authContext'
 import './Auth.css'
 
 export default function SignIn() {
   const navigate = useNavigate()
+  const { setUser } = useAuth()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [form, setForm] = useState({ username: '', password: '', role: 'tenant' })
@@ -20,8 +22,9 @@ export default function SignIn() {
     setError('')
     setLoading(true)
     try {
-      await login({ username: form.username.trim(), password: form.password })
-      navigate('/home')
+      const user = await login({ username: form.username.trim(), password: form.password })
+      setUser(user)
+      navigate(user?.role === 'landlord' ? '/dashboard' : '/home')
     } catch (err) {
       setError(err.message || 'Invalid username or password.')
     } finally {
