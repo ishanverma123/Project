@@ -19,7 +19,7 @@ export default function Layout() {
     <div className="layout">
       <header className={`layout-header ${isAuthPage ? 'layout-header-auth' : ''}`}>
         <Link to={isAuthPage ? '/' : homeHref} className="logo">
-          Smart Carpool
+          Carpool
         </Link>
         <nav>
           {user ? (
