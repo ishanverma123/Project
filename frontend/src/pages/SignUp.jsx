@@ -16,7 +16,7 @@ export default function SignUp() {
     password_confirm: '',
     first_name: '',
     last_name: '',
-    role: 'tenant',
+    role: 'traveller',
   })
 
   const handleChange = (e) => {
@@ -47,7 +47,7 @@ export default function SignUp() {
         role: form.role,
       })
       setUser(user)
-      navigate(user?.role === 'landlord' ? '/dashboard' : '/home')
+      navigate(user?.role === 'driver' ? '/dashboard' : '/home')
     } catch (err) {
       setError(err.message || 'Registration failed. Please try again.')
     } finally {
@@ -59,7 +59,7 @@ export default function SignUp() {
     <div className="auth-screen signup-screen">
       <div className="auth-hero">
         <h1 className="auth-brand">Smart Rental</h1>
-        <p className="auth-tagline">Find your perfect place or list your property.</p>
+        <p className="auth-tagline">Book shared rides or drive and list your journey.</p>
       </div>
       <div className="auth-card-wrapper">
         <div className="auth-card">
@@ -120,29 +120,29 @@ export default function SignUp() {
             <div className="auth-row">
               <label>I want to</label>
               <div className="role-select">
-                <label className={`role-option ${form.role === 'tenant' ? 'active' : ''}`}>
+                <label className={`role-option ${form.role === 'traveller' ? 'active' : ''}`}>
                   <input
                     type="radio"
                     name="role"
-                    value="tenant"
-                    checked={form.role === 'tenant'}
+                    value="traveller"
+                    checked={form.role === 'traveller'}
                     onChange={handleChange}
                   />
                   <span className="role-icon" aria-hidden>👤</span>
-                  <span className="role-label">Rent a place</span>
-                  <span className="role-sublabel">Tenant</span>
+                  <span className="role-label">Book shared rides</span>
+                  <span className="role-sublabel">Traveller</span>
                 </label>
-                <label className={`role-option ${form.role === 'landlord' ? 'active' : ''}`}>
+                <label className={`role-option ${form.role === 'driver' ? 'active' : ''}`}>
                   <input
                     type="radio"
                     name="role"
-                    value="landlord"
-                    checked={form.role === 'landlord'}
+                    value="driver"
+                    checked={form.role === 'driver'}
                     onChange={handleChange}
                   />
-                  <span className="role-icon" aria-hidden>🏠</span>
-                  <span className="role-label">List my property</span>
-                  <span className="role-sublabel">Landlord</span>
+                  <span className="role-icon" aria-hidden>🚗</span>
+                  <span className="role-label">List my ride</span>
+                  <span className="role-sublabel">Driver</span>
                 </label>
               </div>
             </div>

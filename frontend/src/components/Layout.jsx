@@ -8,7 +8,7 @@ export default function Layout() {
   const { user, logout } = useAuth()
 
   const isAuthPage = location.pathname === '/' || location.pathname === '/signin'
-  const homeHref = user?.role === 'landlord' ? '/dashboard' : '/home'
+  const homeHref = user?.role === 'driver' ? '/dashboard' : '/home'
 
   const handleSignOut = async () => {
     await logout()
@@ -19,14 +19,14 @@ export default function Layout() {
     <div className="layout">
       <header className={`layout-header ${isAuthPage ? 'layout-header-auth' : ''}`}>
         <Link to={isAuthPage ? '/' : homeHref} className="logo">
-          Smart Rental
+          Smart Carpool
         </Link>
         <nav>
           {user ? (
             <>
               {!isAuthPage && (
                 <>
-                  {user.role === 'tenant' && <Link to="/home">Home</Link>}
+                  {user.role === 'traveller' && <Link to="/home">Rides</Link>}
                   <Link to="/dashboard">Dashboard</Link>
                 </>
               )}

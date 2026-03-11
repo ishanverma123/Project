@@ -9,7 +9,17 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CustomUser
-        fields = ("id", "username", "email", "first_name", "last_name", "role")
+        fields = (
+            "id",
+            "username",
+            "email",
+            "first_name",
+            "last_name",
+            "role",
+            "profile_photo",
+            "bio",
+            "phone",
+        )
         read_only_fields = fields
 
 
@@ -18,10 +28,21 @@ class RegisterSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(required=False, allow_blank=True)
     first_name = serializers.CharField(required=False, allow_blank=True)
     last_name = serializers.CharField(required=False, allow_blank=True)
+    bio = serializers.CharField(required=False, allow_blank=True)
+    phone = serializers.CharField(required=False, allow_blank=True)
 
     class Meta:
         model = CustomUser
-        fields = ("username", "email", "password", "first_name", "last_name", "role")
+        fields = (
+            "username",
+            "email",
+            "password",
+            "first_name",
+            "last_name",
+            "role",
+            "bio",
+            "phone",
+        )
 
     def validate_password(self, value: str) -> str:
         """
@@ -39,6 +60,8 @@ class RegisterSerializer(serializers.ModelSerializer):
             first_name=validated_data.get("first_name", ""),
             last_name=validated_data.get("last_name", ""),
             role=validated_data["role"],
+            bio=validated_data.get("bio", ""),
+            phone=validated_data.get("phone", ""),
         )
         return user
 

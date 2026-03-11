@@ -59,7 +59,7 @@ export async function logout() {
   })
 }
 
-export async function createProperty(formData) {
+export async function createRide(formData) {
   await getCsrfCookie()
   const res = await fetch('/api/properties/', {
     method: 'POST',
@@ -74,52 +74,86 @@ export async function createProperty(formData) {
     const firstError =
       json.title?.[0] ||
       json.description?.[0] ||
-      json.price_per_day?.[0] ||
+      json.price_per_seat?.[0] ||
+      json.from_city?.[0] ||
+      json.to_city?.[0] ||
+      json.departure_time?.[0] ||
+      json.max_passengers?.[0] ||
       json.image?.[0] ||
       json.detail ||
-      'Failed to create property'
+      'Failed to create ride'
     throw new Error(firstError)
   }
   return json
 }
 
-export async function updateProperty(id, formData) {
+export async function searchRides(params = {}) {
+  const query = new URLSearchParams()
+  if (params.from_city) query.set('from_city', params.from_city)
+  if (params.to_city) query.set('to_city', params.to_city)
+  if (params.departure_date) query.set('departure_date', params.departure_date)
+
+  const suffix = query.toString() ? `?${query.toString()}` : ''
+  const res = await fetch(`/api/properties/${suffix}`, { credentials: 'include' })
+  const json = await res.json().catch(() => [])
+  if (!res.ok) {
+    throw new Error(json.detail || 'Failed to load rides')
+  }
+  return Array.isArray(json) ? json : []
+}
+
+export async function listDriverRides() {
+  const res = await fetch('/api/properties/?mine=true', { credentials: 'include' })
+  const json = await res.json().catch(() => [])
+  if (!res.ok) {
+    throw new Error(json.detail || 'Failed to load your rides')
+  }
+  return Array.isArray(json) ? json : []
+}
+
+export async function createRideBooking(data) {
   await getCsrfCookie()
-  const res = await fetch(`/api/properties/${id}/`, {
-    method: 'PATCH',
+  const res = await fetch('/api/bookings/', {
+    method: 'POST',
     credentials: 'include',
     headers: {
+      'Content-Type': 'application/json',
       'X-CSRFToken': getCsrfToken(),
     },
-    body: formData,
+    body: JSON.stringify(data),
   })
   const json = await res.json().catch(() => ({}))
   if (!res.ok) {
-    const firstError =
-      json.title?.[0] ||
-      json.description?.[0] ||
-      json.price_per_day?.[0] ||
-      json.image?.[0] ||
-      json.detail ||
-      'Failed to update property'
-    throw new Error(firstError)
+    throw new Error(json.passenger_count?.[0] || json.property?.[0] || json.detail || 'Failed to book ride')
   }
   return json
 }
 
-export async function deleteProperty(id) {
+export async function updateBookingStatus(id, status) {
   await getCsrfCookie()
-  const res = await fetch(`/api/properties/${id}/`, {
-    method: 'DELETE',
+  const res = await fetch(`/api/bookings/${id}/`, {
+    method: 'PATCH',
     credentials: 'include',
     headers: {
+      'Content-Type': 'application/json',
       'X-CSRFToken': getCsrfToken(),
     },
+    body: JSON.stringify({ status }),
   })
+  const json = await res.json().catch(() => ({}))
   if (!res.ok) {
-    const json = await res.json().catch(() => ({}))
-    throw new Error(json.detail || 'Failed to delete property')
+    throw new Error(json.status?.[0] || json.detail || 'Failed to update booking request')
   }
+  return json
+}
+
+export async function listMyBookings() {
+  const res = await fetch('/api/bookings/', { credentials: 'include' })
+  const json = await res.json().catch(() => [])
+  if (!res.ok) {
+    throw new Error(json.detail || 'Failed to load bookings')
+  }
+  return Array.isArray(json) ? json : []
 }
 
 export async function createInquiry(data) {
@@ -167,4 +201,43 @@ export async function updateInquiryStatus(id, status) {
     throw new Error(json.detail || 'Failed to update inquiry')
   }
   return json
+}
+
+export async function updateProperty(id, formData) {
+  await getCsrfCookie()
+  const res = await fetch(`/api/properties/${id}/`, {
+    method: 'PATCH',
+    credentials: 'include',
+    headers: {
+      'X-CSRFToken': getCsrfToken(),
+    },
+    body: formData,
+  })
+  const json = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    const firstError =
+      json.title?.[0] ||
+      json.description?.[0] ||
+      json.price_per_seat?.[0] ||
+      json.image?.[0] ||
+      json.detail ||
+      'Failed to update ride'
+    throw new Error(firstError)
+  }
+  return json
+}
+
+export async function deleteProperty(id) {
+  await getCsrfCookie()
+  const res = await fetch(`/api/properties/${id}/`, {
+    method: 'DELETE',
+    credentials: 'include',
+    headers: {
+      'X-CSRFToken': getCsrfToken(),
+    },
+  })
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}))
+    throw new Error(json.detail || 'Failed to delete ride')
+  }
 }

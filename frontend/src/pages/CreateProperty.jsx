@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { createProperty } from '../lib/api'
+import { createRide } from '../lib/api'
 
 export default function CreateProperty() {
   const navigate = useNavigate()
@@ -9,21 +9,24 @@ export default function CreateProperty() {
   const [form, setForm] = useState({
     title: '',
     description: '',
-    price_per_day: '',
-    address_line1: '',
-    city: '',
-    state: '',
-    zip_code: '',
-    beds: 1,
-    baths: 1.0,
-    sqft: 0,
+    from_city: '',
+    to_city: '',
+    pickup_point: '',
+    dropoff_point: '',
+    departure_time: '',
+    price_per_seat: '',
+    max_passengers: 1,
+    car_make: '',
+    car_model: '',
+    car_color: '',
+    car_plate: '',
     image: null,
   })
 
-  const previewAddress = useMemo(() => {
-    const parts = [form.address_line1, form.city, form.state, form.zip_code].filter(Boolean)
-    return parts.length ? parts.join(', ') : '—'
-  }, [form.address_line1, form.city, form.state, form.zip_code])
+  const previewRoute = useMemo(() => {
+    if (!form.from_city && !form.to_city) return '—'
+    return `${form.from_city || '—'} to ${form.to_city || '—'}`
+  }, [form.from_city, form.to_city])
 
   const handleChange = (e) => {
     const { name, value, files } = e.target
@@ -41,25 +44,30 @@ export default function CreateProperty() {
 
     if (!form.title.trim()) return setError('Title is required.')
     if (!form.description.trim()) return setError('Description is required.')
-    if (!form.price_per_day || Number.isNaN(Number(form.price_per_day))) return setError('Price per day is required.')
-    if (Number(form.price_per_day) <= 0) return setError('Price per day must be greater than 0.')
+    if (!form.from_city.trim() || !form.to_city.trim()) return setError('From and to city are required.')
+    if (!form.departure_time) return setError('Departure time is required.')
+    if (!form.price_per_seat || Number.isNaN(Number(form.price_per_seat))) return setError('Price per seat is required.')
+    if (Number(form.price_per_seat) <= 0) return setError('Price per seat must be greater than 0.')
 
     const fd = new FormData()
     fd.append('title', form.title.trim())
     fd.append('description', form.description.trim())
-    fd.append('price_per_day', String(form.price_per_day))
-    fd.append('address_line1', form.address_line1.trim())
-    fd.append('city', form.city.trim())
-    fd.append('state', form.state.trim())
-    fd.append('zip_code', form.zip_code.trim())
-    fd.append('beds', String(form.beds))
-    fd.append('baths', String(form.baths))
-    fd.append('sqft', String(form.sqft))
+    fd.append('from_city', form.from_city.trim())
+    fd.append('to_city', form.to_city.trim())
+    fd.append('pickup_point', form.pickup_point.trim())
+    fd.append('dropoff_point', form.dropoff_point.trim())
+    fd.append('departure_time', form.departure_time)
+    fd.append('price_per_seat', String(form.price_per_seat))
+    fd.append('max_passengers', String(form.max_passengers))
+    fd.append('car_make', form.car_make.trim())
+    fd.append('car_model', form.car_model.trim())
+    fd.append('car_color', form.car_color.trim())
+    fd.append('car_plate', form.car_plate.trim())
     if (form.image) fd.append('image', form.image)
 
     setLoading(true)
     try {
-      await createProperty(fd)
+      await createRide(fd)
       navigate('/dashboard')
     } catch (e) {
       setError(e.message || 'Failed to create property')
@@ -73,17 +81,17 @@ export default function CreateProperty() {
       <div className="page property-detail-page create-property-page">
         <header className="property-detail-header">
           <div>
-            <h1>Create property listing</h1>
-            <p className="property-detail-address">Add the key details tenants will see on the listing page.</p>
+            <h1>Create ride listing</h1>
+            <p className="property-detail-address">Add route, departure, car details, and available seats.</p>
             <p className="property-detail-owner">
               <Link to="/dashboard">← Back to dashboard</Link>
             </p>
           </div>
           <div className="property-detail-price">
             <div className="price-main">
-              {form.price_per_day ? `$${form.price_per_day}/day` : '—'}
+              {form.price_per_seat ? `$${form.price_per_seat}/seat` : '—'}
             </div>
-            <div className="price-sub">{form.beds} bed · {form.baths} bath</div>
+            <div className="price-sub">Max seats: {form.max_passengers}</div>
           </div>
         </header>
 
@@ -105,66 +113,84 @@ export default function CreateProperty() {
 
                 <div className="grid-3">
                   <label>
-                    Price per day *
+                    Price per seat *
                     <input
-                      name="price_per_day"
+                      name="price_per_seat"
                       type="number"
                       min="0"
                       step="0.01"
-                      value={form.price_per_day}
+                      value={form.price_per_seat}
                       onChange={handleChange}
                       required
                     />
                   </label>
                   <label>
-                    Beds
-                    <input name="beds" type="number" min="0" step="1" value={form.beds} onChange={handleChange} />
+                    Max passengers
+                    <input name="max_passengers" type="number" min="1" step="1" value={form.max_passengers} onChange={handleChange} />
                   </label>
                   <label>
-                    Baths
-                    <input name="baths" type="number" min="0" step="0.5" value={form.baths} onChange={handleChange} />
+                    Departure time *
+                    <input name="departure_time" type="datetime-local" value={form.departure_time} onChange={handleChange} required />
                   </label>
                 </div>
               </form>
             </section>
 
             <section className="property-panel create-location-panel create-property-form">
-              <h2>Location</h2>
+              <h2>Journey details</h2>
               <div className="grid-3">
-                <label className="grid-span-2">
-                  Address
-                  <input name="address_line1" value={form.address_line1} onChange={handleChange} />
+                <label>
+                  From city *
+                  <input name="from_city" value={form.from_city} onChange={handleChange} required />
                 </label>
                 <label>
-                  Sqft
-                  <input name="sqft" type="number" min="0" step="1" value={form.sqft} onChange={handleChange} />
+                  To city *
+                  <input name="to_city" value={form.to_city} onChange={handleChange} required />
+                </label>
+                <label>
+                  Pickup point
+                  <input name="pickup_point" value={form.pickup_point} onChange={handleChange} />
                 </label>
               </div>
               <div className="grid-3">
                 <label>
-                  City
-                  <input name="city" value={form.city} onChange={handleChange} />
-                </label>
-                <label>
-                  State
-                  <input name="state" value={form.state} onChange={handleChange} />
-                </label>
-                <label>
-                  ZIP
-                  <input name="zip_code" value={form.zip_code} onChange={handleChange} />
+                  Dropoff point
+                  <input name="dropoff_point" value={form.dropoff_point} onChange={handleChange} />
                 </label>
               </div>
             </section>
 
             <section className="property-panel create-media-panel create-property-form">
+              <h2>Car details</h2>
+              <div className="grid-3">
+                <label>
+                  Car make
+                  <input name="car_make" value={form.car_make} onChange={handleChange} />
+                </label>
+                <label>
+                  Car model
+                  <input name="car_model" value={form.car_model} onChange={handleChange} />
+                </label>
+                <label>
+                  Color
+                  <input name="car_color" value={form.car_color} onChange={handleChange} />
+                </label>
+              </div>
+              <label>
+                Plate number
+                <input name="car_plate" value={form.car_plate} onChange={handleChange} />
+              </label>
+            </section>
+
+            <section className="property-panel create-media-panel create-property-form">
               <h2>Media</h2>
               <label>
-                Cover image
+                Car image
                 <input name="image" type="file" accept="image/*" onChange={handleChange} />
               </label>
               <div className="create-property-actions">
                 <button type="submit" className="button primary" disabled={loading} onClick={handleSubmit}>
-                  {loading ? 'Creating…' : 'Create listing'}
+                  {loading ? 'Creating…' : 'Create ride'}
                 </button>
                 <Link className="button secondary" to="/dashboard">
                   Cancel
@@ -176,22 +202,22 @@ export default function CreateProperty() {
           <aside className="property-detail-sidebar" aria-label="Preview">
             <div className="contact-card">
               <h2>Preview</h2>
-              <p className="muted">This is how key details will appear to tenants.</p>
+              <p className="muted">This is how key details will appear to travellers.</p>
               <div className="preview-row">
                 <span className="preview-label">Title</span>
                 <span className="preview-value">{form.title || '—'}</span>
               </div>
               <div className="preview-row">
-                <span className="preview-label">Address</span>
-                <span className="preview-value">{previewAddress}</span>
+                <span className="preview-label">Route</span>
+                <span className="preview-value">{previewRoute}</span>
               </div>
               <div className="preview-row">
-                <span className="preview-label">Beds/Baths</span>
-                <span className="preview-value">{form.beds} / {form.baths}</span>
+                <span className="preview-label">Departure</span>
+                <span className="preview-value">{form.departure_time || '—'}</span>
               </div>
               <div className="preview-row">
-                <span className="preview-label">Sqft</span>
-                <span className="preview-value">{form.sqft || '—'}</span>
+                <span className="preview-label">Seats / Price</span>
+                <span className="preview-value">{form.max_passengers} / ${form.price_per_seat || '—'}</span>
               </div>
             </div>
           </aside>

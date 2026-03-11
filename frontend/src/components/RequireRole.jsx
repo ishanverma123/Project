@@ -10,7 +10,7 @@ export default function RequireRole({ allow, children }) {
 
   const allowed = Array.isArray(allow) ? allow : [allow]
   if (!allowed.includes(user.role)) {
-    return <Navigate to={user.role === 'landlord' ? '/dashboard' : '/home'} replace />
+    return <Navigate to={user.role === 'driver' ? '/dashboard' : '/home'} replace />
   }
 
   return children

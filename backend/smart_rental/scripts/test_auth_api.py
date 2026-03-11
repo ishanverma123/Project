@@ -36,7 +36,7 @@ def main():
         json={
             "username": "testuser1",
             "password": "testpass123",
-            "role": "tenant",
+            "role": "traveller",
             "email": "test@example.com",
         },
     )

@@ -1,49 +1,85 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { createRideBooking, searchRides } from '../lib/api'
 
 export default function Home() {
-  const [properties, setProperties] = useState([])
+  const [rides, setRides] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [bookingError, setBookingError] = useState('')
+  const [bookingSuccess, setBookingSuccess] = useState('')
+  const [search, setSearch] = useState({ from_city: '', to_city: '', departure_date: '' })
+
+  const loadRides = async (params = {}) => {
+    setLoading(true)
+    setError('')
+    try {
+      const data = await searchRides(params)
+      setRides(data)
+    } catch (e) {
+      setError(e.message || 'Failed to load rides')
+      setRides([])
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    let cancelled = false
-
-    async function load() {
-      try {
-        const res = await fetch('/api/properties/', { credentials: 'include' })
-        const data = await res.json().catch(() => [])
-        if (!res.ok) throw new Error()
-        if (!cancelled) setProperties(Array.isArray(data) ? data : [])
-      } catch {
-        if (!cancelled) setProperties([])
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    }
-
-    load()
-    return () => {
-      cancelled = true
-    }
+    loadRides()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  const handleBookRide = async (rideId) => {
+    setBookingError('')
+    setBookingSuccess('')
+    try {
+      await createRideBooking({ property: rideId, passenger_count: 1 })
+      setBookingSuccess('Booking request sent to driver.')
+      await loadRides(search)
+    } catch (e) {
+      setBookingError(e.message || 'Failed to book ride')
+    }
+  }
+
+  const handleSearchSubmit = async (e) => {
+    e.preventDefault()
+    await loadRides(search)
+  }
+
+  const handleChange = (e) => {
+    const { name, value } = e.target
+    setSearch((prev) => ({ ...prev, [name]: value }))
+  }
 
   return (
     <div className="home-page">
       <section className="home-hero">
         <div className="home-hero-overlay" />
         <div className="home-hero-content">
-          <h1>Find your perfect place.</h1>
-          <p>Browse thousands of rentals, compare options, and book with confidence.</p>
-          <form
-            className="home-hero-search"
-            onSubmit={(e) => {
-              e.preventDefault()
-            }}
-          >
+          <h1>Find your next ride.</h1>
+          <p>Search rides by journey and date, then book your seat instantly.</p>
+          <form className="home-hero-search" onSubmit={handleSearchSubmit}>
             <input
+              name="from_city"
               type="text"
-              placeholder="City, Neighborhood, ZIP"
-              aria-label="Search by city, neighborhood, or ZIP"
+              value={search.from_city}
+              onChange={handleChange}
+              placeholder="From city"
+              aria-label="Search by origin city"
+            />
+            <input
+              name="to_city"
+              type="text"
+              value={search.to_city}
+              onChange={handleChange}
+              placeholder="To city"
+              aria-label="Search by destination city"
+            />
+            <input
+              name="departure_date"
+              type="date"
+              value={search.departure_date}
+              onChange={handleChange}
+              aria-label="Search by departure date"
             />
             <button type="submit">Search</button>
           </form>
@@ -52,19 +88,18 @@ export default function Home() {
 
       <div className="page home-page-inner">
         <section className="home-section-header">
-          <h2>Properties for you</h2>
-          <p>These properties are trending. Find the perfect place, book a tour, or contact to learn more.</p>
+          <h2>Available rides</h2>
+          <p>See driver details, seats left, and booked passengers before reserving your seat.</p>
         </section>
+        {error && <div className="panel-error" role="alert">{error}</div>}
+        {bookingError && <div className="panel-error" role="alert">{bookingError}</div>}
+        {bookingSuccess && <p className="muted">{bookingSuccess}</p>}
 
         <section className="property-cards">
-          {loading && (
-            <p className="muted">Loading properties…</p>
-          )}
-          {!loading && properties.length === 0 && (
-            <p className="muted">No properties listed yet. Check back soon.</p>
-          )}
+          {loading && <p className="muted">Loading rides…</p>}
+          {!loading && rides.length === 0 && <p className="muted">No rides found for this search.</p>}
           {!loading &&
-            properties.map((p, index) => {
+            rides.map((p, index) => {
               const gradientClass =
                 index % 3 === 0 ? 'property-card-image-1' : index % 3 === 1 ? 'property-card-image-2' : 'property-card-image-3'
               const imageStyle = p.image
@@ -72,25 +107,23 @@ export default function Home() {
                 : {}
               return (
                 <article key={p.id} className="property-card">
-                  <div className={`property-card-image ${gradientClass}`} style={imageStyle}>
-                    {/* badges can come from data later */}
-                  </div>
+                  <div className={`property-card-image ${gradientClass}`} style={imageStyle} />
                   <div className="property-card-body">
-                    <h3>${p.price_per_day}+</h3>
+                    <h3>${p.price_per_seat} / seat</h3>
                     <p className="property-location">{p.title}</p>
-                    <p className="property-address">
-                      {p.address_line1 || '—'}
-                      {p.city ? `, ${p.city}` : ''}
-                      {p.state ? `, ${p.state}` : ''}
-                      {p.zip_code ? ` ${p.zip_code}` : ''}
-                    </p>
+                    <p className="property-address">{p.from_city} to {p.to_city}</p>
                     <p className="property-meta">
-                      {p.beds} Beds · {p.baths} Baths
+                      Driver: {p.driver_name} · Seats left: {p.seats_left}
                     </p>
+                    <p className="property-meta">Booked passengers: {p.booked_passengers_count}</p>
+                    {Array.isArray(p.booked_passengers) && p.booked_passengers.length > 0 && (
+                      <p className="property-meta">
+                        {p.booked_passengers.map((bp) => `${bp.name} (${bp.passenger_count})`).join(', ')}
+                      </p>
+                    )}
                     <div className="card-actions">
-                      <Link to={`/property/${p.id}`}>View Details</Link>
-                      <button type="button" aria-label="Add to favorites">
-                        ♥ Favorites
+                      <button type="button" onClick={() => handleBookRide(p.id)} disabled={p.seats_left <= 0}>
+                        {p.seats_left <= 0 ? 'Full' : 'Request booking'}
                       </button>
                     </div>
                   </div>

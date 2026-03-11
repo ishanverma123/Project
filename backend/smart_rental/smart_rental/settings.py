@@ -17,16 +17,48 @@ import os
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
+def _load_dotenv(dotenv_path: Path) -> None:
+    if not dotenv_path.exists():
+        return
+
+    for raw_line in dotenv_path.read_text().splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith('#') or '=' not in line:
+            continue
+
+        key, value = line.split('=', 1)
+        key = key.strip()
+        value = value.strip().strip('"').strip("'")
+        os.environ.setdefault(key, value)
+
+
+def _env_bool(name: str, default: bool = False) -> bool:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {'1', 'true', 'yes', 'on'}
+
+
+_load_dotenv(BASE_DIR / '.env')
+
+# Toggle S3 media storage with env var. Keep local storage as fallback.
+USE_S3 = _env_bool('USE_S3', False)
+
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-c#611#r7dhy80h1zny4$rz$5su_ertq(9$lzyp4wyj@(8a250r'
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-c#611#r7dhy80h1zny4$rz$5su_ertq(9$lzyp4wyj@(8a250r')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = _env_bool('DJANGO_DEBUG', True)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in os.getenv('DJANGO_ALLOWED_HOSTS', '').split(',')
+    if host.strip()
+]
 
 
 # Application definition
@@ -49,6 +81,9 @@ INSTALLED_APPS = [
     'bookings',
     'reviews',
 ]
+
+if USE_S3:
+    INSTALLED_APPS.append('storages')
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -148,8 +183,35 @@ USE_TZ = True
 STATIC_URL = 'static/'
 
 # Media uploads (e.g., property images)
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+if USE_S3:
+    AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID', '')
+    AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY', '')
+    AWS_SESSION_TOKEN = os.getenv('AWS_SESSION_TOKEN', '')
+    AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME', '')
+    AWS_S3_REGION_NAME = os.getenv('AWS_S3_REGION_NAME', '')
+    AWS_DEFAULT_ACL = None
+    AWS_QUERYSTRING_AUTH = False
+    AWS_S3_FILE_OVERWRITE = False
+
+    STORAGES = {
+        'default': {
+            'BACKEND': 'storages.backends.s3boto3.S3Boto3Storage',
+        },
+        'staticfiles': {
+            'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
+        },
+    }
+
+    custom_domain = os.getenv('AWS_S3_CUSTOM_DOMAIN', '').strip()
+    if custom_domain:
+        MEDIA_URL = f"https://{custom_domain}/"
+    elif AWS_STORAGE_BUCKET_NAME and AWS_S3_REGION_NAME:
+        MEDIA_URL = f"https://{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com/"
+    else:
+        MEDIA_URL = '/media/'
+else:
+    MEDIA_URL = '/media/'
+    MEDIA_ROOT = BASE_DIR / 'media'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field

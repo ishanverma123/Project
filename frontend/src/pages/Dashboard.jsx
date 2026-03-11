@@ -9,7 +9,7 @@ export default function Dashboard() {
   if (loading) return <div className="page"><p className="muted">Loading…</p></div>
   if (!user) return <Navigate to="/signin" replace />
 
-  if (user.role === 'landlord') return <LandlordDashboard />
+  if (user.role === 'driver') return <LandlordDashboard />
   return <UserDashboard />
 }
 

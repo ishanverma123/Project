@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+
+# Environment files
+.env
+.env.*
+
+# Django media and local DB
+backend/smart_rental/media/
+backend/smart_rental/db.sqlite3
+
+# Frontend
+frontend/node_modules/
+frontend/dist/

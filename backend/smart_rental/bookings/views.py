@@ -1,14 +1,11 @@
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.viewsets import ModelViewSet
 
 from .models import Booking
 from .serializers import BookingSerializer
-from rental_core_engine.booking_engine import BookingEngine
-from rental_core_engine.pricing_engine import PricingEngine
-
-booking_engine = BookingEngine()
-pricing_engine = PricingEngine()
 
 
 class BookingViewSet(ModelViewSet):
@@ -16,29 +13,70 @@ class BookingViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return Booking.objects.filter(user=self.request.user)
+        user = self.request.user
+        qs = Booking.objects.select_related('property', 'user').all()
+        if hasattr(user, 'role') and user.role == 'driver':
+            return qs.filter(property__driver=user)
+        return qs.filter(user=user)
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        serializer.save(user=self.request.user, status='pending')
+
+    def perform_update(self, serializer):
+        booking = self.get_object()
+        user = self.request.user
+
+        # Drivers can only approve/reject requests for their own rides.
+        if not hasattr(user, 'role') or user.role != 'driver' or booking.property.driver != user:
+            raise PermissionDenied('Only the ride driver can update booking requests.')
+
+        new_status = serializer.validated_data.get('status')
+        if new_status not in {'approved', 'rejected'}:
+            raise ValidationError({'status': ['Status must be approved or rejected.']})
+
+        if new_status == 'approved':
+            approved = booking.property.bookings.filter(status__in=['approved', 'confirmed']).exclude(id=booking.id)
+            used_seats = sum(item.passenger_count for item in approved)
+            seats_left = booking.property.max_passengers - used_seats
+            if booking.passenger_count > seats_left:
+                raise ValidationError({'status': [f'Cannot approve: only {max(seats_left, 0)} seats left.']})
+
+        serializer.save()
 
     def create(self, request, *args, **kwargs):
+        user = request.user
+        if hasattr(user, 'role') and user.role != 'traveller':
+            raise PermissionDenied('Only travellers can book seats.')
 
-        start_date = request.data.get("start_date")
-        end_date = request.data.get("end_date")
+        property_id = request.data.get('property')
+        if not property_id:
+            raise ValidationError({'property': ['Ride id is required.']})
 
-        if not booking_engine.validate_dates(start_date, end_date):
-            return Response({"error": "Invalid dates"}, status=400)
+        try:
+            passenger_count = int(request.data.get('passenger_count', 1))
+        except (TypeError, ValueError):
+            raise ValidationError({'passenger_count': ['Passenger count must be a number.']})
 
-        response = super().create(request, *args, **kwargs)
+        if passenger_count <= 0:
+            raise ValidationError({'passenger_count': ['Passenger count must be at least 1.']})
 
-        booking = Booking.objects.get(id=response.data["id"])
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        ride = serializer.validated_data['property']
 
-        total_price = pricing_engine.calculate_total_price(
-            booking.property.price_per_day,
-            booking.start_date,
-            booking.end_date
-        )
+        confirmed = ride.bookings.filter(status__in=['approved', 'confirmed'])
+        booked_seats = sum(item.passenger_count for item in confirmed)
+        seats_left = max(ride.max_passengers - booked_seats, 0)
 
-        response.data["total_price"] = total_price
+        if seats_left <= 0:
+            raise ValidationError({'passenger_count': ['This ride is full.']})
 
-        return response
+        if passenger_count > seats_left:
+            raise ValidationError({'passenger_count': [f'Only {seats_left} seats left for this ride.']})
+
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        data = dict(serializer.data)
+        data['seats_left_after_booking'] = seats_left
+        data['detail'] = 'Booking request sent to driver for approval.'
+        return Response(data, status=status.HTTP_201_CREATED, headers=headers)

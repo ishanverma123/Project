@@ -3,8 +3,6 @@ import Layout from './components/Layout'
 import SignUp from './pages/SignUp'
 import SignIn from './pages/SignIn'
 import Home from './pages/Home'
-import PropertyDetail from './pages/PropertyDetail'
-import BookingPayment from './pages/BookingPayment'
 import Dashboard from './pages/Dashboard'
 import CreateProperty from './pages/CreateProperty'
 import RequireRole from './components/RequireRole'
@@ -22,39 +20,23 @@ export default function App() {
             <Route
               path="home"
               element={
-                <RequireRole allow="tenant">
+                <RequireRole allow="traveller">
                   <Home />
-                </RequireRole>
-              }
-            />
-            <Route
-              path="property/:id"
-              element={
-                <RequireRole allow="tenant">
-                  <PropertyDetail />
-                </RequireRole>
-              }
-            />
-            <Route
-              path="booking/:id"
-              element={
-                <RequireRole allow="tenant">
-                  <BookingPayment />
                 </RequireRole>
               }
             />
             <Route
               path="dashboard"
               element={
-                <RequireRole allow={['tenant', 'landlord']}>
+                <RequireRole allow={['traveller', 'driver']}>
                   <Dashboard />
                 </RequireRole>
               }
             />
             <Route
-              path="dashboard/new-property"
+              path="dashboard/new-ride"
               element={
-                <RequireRole allow="landlord">
+                <RequireRole allow="driver">
                   <CreateProperty />
                 </RequireRole>
               }
