@@ -66,7 +66,8 @@ jobs:
           script_stop: true
           envs: APP_DIR,BACKEND_SERVICE_NAME,FRONTEND_DEPLOY_DIR,PYTHON_VENV_PATH,DJANGO_SECRET_KEY,DJANGO_DEBUG,DJANGO_ALLOWED_HOSTS,DB_NAME,DB_USER,DB_PASSWORD,DB_HOST,DB_PORT,USE_S3,AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_SESSION_TOKEN,AWS_STORAGE_BUCKET_NAME,AWS_S3_REGION_NAME,AWS_S3_CUSTOM_DOMAIN
           script: |
-            set -euo pipefail
+            set -Eeuo pipefail
+            trap 'echo "[deploy-error] failed at line $LINENO: $BASH_COMMAND"' ERR
 
             if [ -z "${APP_DIR}" ]; then
               echo "EC2_APP_DIR secret is required"
@@ -84,6 +85,17 @@ jobs:
 
             echo "Deploying backend..."
             cd "${APP_DIR}/backend/smart_rental"
+
+            if ! command -v python3 >/dev/null 2>&1; then
+              echo "python3 is required on EC2 for backend deploy."
+              exit 1
+            fi
+
+            if ! python3 -m venv --help >/dev/null 2>&1; then
+              echo "Installing python3-venv and python3-pip..."
+              sudo apt-get update
+              sudo apt-get install -y python3-venv python3-pip
+            fi
 
             ENV_FILE="${APP_DIR}/backend/smart_rental/.env"
             touch "${ENV_FILE}"
@@ -138,6 +150,7 @@ jobs:
             else
               DEPLOY_VENV_PATH="${APP_DIR}/backend/smart_rental/.venv"
               if [ ! -d "${DEPLOY_VENV_PATH}" ]; then
+                echo "Creating virtualenv at ${DEPLOY_VENV_PATH}"
                 python3 -m venv "${DEPLOY_VENV_PATH}"
               fi
             fi
