@@ -228,3 +228,48 @@
 .auth-switch a:hover {
   text-decoration: underline;
 }
+
+@media (max-width: 768px) {
+  .auth-hero {
+    padding: 2rem 1rem 1.4rem;
+  }
+
+  .auth-card-wrapper {
+    padding: 1.25rem 0.85rem;
+  }
+
+  .auth-card {
+    padding: 1.25rem;
+    border-radius: 10px;
+  }
+
+  .auth-form {
+    gap: 0.95rem;
+  }
+
+  .auth-row-split,
+  .role-select {
+    grid-template-columns: 1fr;
+    gap: 0.65rem;
+  }
+
+  .auth-submit {
+    width: 100%;
+  }
+}
+
+@media (max-width: 420px) {
+  .auth-card {
+    padding: 1rem;
+  }
+
+  .auth-card-title {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+  }
+
+  .auth-row input {
+    padding: 0.68rem 0.85rem;
+    font-size: 0.9rem;
+  }
+}

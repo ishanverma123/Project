@@ -1724,3 +1724,178 @@
   font-size: 0.84rem;
   font-weight: 600;
 }
+
+@media (max-width: 1024px) {
+  .page {
+    max-width: 100%;
+  }
+
+  .home-hero {
+    height: auto;
+    min-height: 250px;
+    padding: 2rem 1.1rem;
+  }
+
+  .home-page-inner,
+  .landlord-dashboard,
+  .dashboard-page,
+  .profile-page {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .property-cards,
+  .landlord-cards-grid {
+    gap: 1rem;
+  }
+
+  .property-detail-page {
+    padding: 1.2rem 1.1rem 1.5rem;
+  }
+
+  .contact-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .page h1 {
+    font-size: 1.45rem;
+  }
+
+  .panel {
+    padding: 0.9rem;
+  }
+
+  .home-hero-search {
+    flex-direction: column;
+    max-width: 100%;
+  }
+
+  .home-hero-search button {
+    width: 100%;
+    min-height: 42px;
+  }
+
+  .property-cards,
+  .landlord-cards-grid,
+  .dashboard-sections {
+    grid-template-columns: 1fr;
+  }
+
+  .property-card,
+  .landlord-card {
+    border-radius: 0.8rem;
+  }
+
+  .property-card-image,
+  .landlord-card .property-card-image {
+    height: 170px;
+  }
+
+  .create-property-actions,
+  .dashboard-header-actions,
+  .landlord-card-actions {
+    width: 100%;
+  }
+
+  .create-property-actions .button,
+  .dashboard-header-actions .button,
+  .landlord-card-actions .button {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .panel-header {
+    align-items: center;
+  }
+
+  .inquiry-item {
+    padding: 0.65rem 0.7rem;
+  }
+
+  .inquiry-header-row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .inquiry-status {
+    align-self: flex-start;
+  }
+
+  .edit-modal {
+    width: min(96vw, 100% - 1rem);
+    max-height: 92vh;
+  }
+
+  .edit-modal-row,
+  .edit-modal-row-3,
+  .profile-form-row-split {
+    grid-template-columns: 1fr;
+  }
+
+  .edit-modal-actions {
+    flex-wrap: wrap;
+    justify-content: stretch;
+  }
+
+  .edit-modal-actions .button {
+    flex: 1;
+  }
+
+  .request-review-modal {
+    width: min(96vw, calc(100% - 1rem));
+  }
+
+  .user-profile-modal {
+    width: min(96vw, calc(100% - 1rem));
+  }
+
+  .user-profile-modal-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .home-hero-content h1 {
+    font-size: 1.6rem;
+  }
+
+  .home-hero-content p {
+    font-size: 0.9rem;
+  }
+
+  .property-card-body {
+    padding: 0.85rem 0.85rem 0.95rem;
+  }
+
+  .property-card-body h3 {
+    font-size: 1rem;
+  }
+
+  .property-location,
+  .property-meta,
+  .property-address {
+    font-size: 0.82rem;
+  }
+
+  .ride-detail-grid p,
+  .ride-detail-description,
+  .ride-detail-passengers li {
+    font-size: 0.84rem;
+  }
+
+  .dashboard-header {
+    margin-bottom: 0.9rem;
+  }
+
+  .dashboard-header h1 {
+    font-size: 1.3rem;
+  }
+
+  .profile-avatar-xl {
+    width: 74px;
+    height: 74px;
+  }
+}
