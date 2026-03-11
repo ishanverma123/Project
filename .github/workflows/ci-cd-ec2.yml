@@ -66,8 +66,7 @@ jobs:
           script_stop: true
           envs: APP_DIR,BACKEND_SERVICE_NAME,FRONTEND_DEPLOY_DIR,PYTHON_VENV_PATH,DJANGO_SECRET_KEY,DJANGO_DEBUG,DJANGO_ALLOWED_HOSTS,DB_NAME,DB_USER,DB_PASSWORD,DB_HOST,DB_PORT,USE_S3,AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_SESSION_TOKEN,AWS_STORAGE_BUCKET_NAME,AWS_S3_REGION_NAME,AWS_S3_CUSTOM_DOMAIN
           script: |
-            set -Eeuo pipefail
-            trap 'echo "[deploy-error] failed at line $LINENO with exit code $?"' ERR
+            set -euxo pipefail
 
             if [ -z "${APP_DIR}" ]; then
               echo "EC2_APP_DIR secret is required"
@@ -161,8 +160,15 @@ jobs:
               fi
             fi
 
+            if [ ! -f "${DEPLOY_VENV_PATH}/bin/activate" ]; then
+              echo "Virtualenv activation script not found at ${DEPLOY_VENV_PATH}/bin/activate"
+              exit 1
+            fi
+
             # shellcheck disable=SC1090
             source "${DEPLOY_VENV_PATH}/bin/activate"
+            echo "Using python: $(which python)"
+            echo "Using pip: $(which pip)"
 
             python -m pip install --upgrade pip
 
@@ -172,6 +178,9 @@ jobs:
               echo "requirements.txt not found in backend/smart_rental; cannot install Django deps."
               exit 1
             fi
+
+            echo "Running Django migration checks..."
+            python -c "import django; print('Django import OK:', django.get_version())"
 
             python3 manage.py migrate --noinput
 
