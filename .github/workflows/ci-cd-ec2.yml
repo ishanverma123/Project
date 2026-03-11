@@ -146,17 +146,17 @@ jobs:
               fi
             fi
 
-            if [ -n "${PYTHON_VENV_PATH}" ] && [ -f "${PYTHON_VENV_PATH}/bin/activate" ]; then
+            DEPLOY_VENV_PATH="${APP_DIR}/backend/smart_rental/.venv"
+            if [ -n "${PYTHON_VENV_PATH:-}" ]; then
               DEPLOY_VENV_PATH="${PYTHON_VENV_PATH}"
-            else
-              DEPLOY_VENV_PATH="${APP_DIR}/backend/smart_rental/.venv"
-              if [ ! -d "${DEPLOY_VENV_PATH}" ]; then
-                echo "Creating virtualenv at ${DEPLOY_VENV_PATH}"
-                if ! python3 -m venv "${DEPLOY_VENV_PATH}"; then
-                  echo "python3 -m venv failed; trying virtualenv fallback..."
-                  python3 -m pip install --user virtualenv
-                  python3 -m virtualenv "${DEPLOY_VENV_PATH}"
-                fi
+            fi
+
+            if [ ! -f "${DEPLOY_VENV_PATH}/bin/activate" ]; then
+              echo "Virtualenv not found at ${DEPLOY_VENV_PATH}, creating it now..."
+              if ! python3 -m venv "${DEPLOY_VENV_PATH}"; then
+                echo "python3 -m venv failed; trying virtualenv fallback..."
+                python3 -m pip install --user virtualenv
+                python3 -m virtualenv "${DEPLOY_VENV_PATH}"
               fi
             fi
 
@@ -182,10 +182,10 @@ jobs:
             echo "Running Django migration checks..."
             python -c "import django; print('Django import OK:', django.get_version())"
 
-            python3 manage.py migrate --noinput
+            python manage.py migrate --noinput
 
             # Not required for API-only backend, but harmless if staticfiles app is configured.
-            python3 manage.py collectstatic --noinput || true
+            python manage.py collectstatic --noinput || true
 
             sudo systemctl restart "${BACKEND_SERVICE_NAME}"
             sudo systemctl is-active --quiet "${BACKEND_SERVICE_NAME}"
