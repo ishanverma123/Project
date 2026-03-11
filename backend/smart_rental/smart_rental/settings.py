@@ -39,6 +39,14 @@ def _env_bool(name: str, default: bool = False) -> bool:
     return value.strip().lower() in {'1', 'true', 'yes', 'on'}
 
 
+def _env_list(name: str, default: list[str] | None = None) -> list[str]:
+    value = os.getenv(name, '')
+    items = [item.strip() for item in value.split(',') if item.strip()]
+    if items:
+        return items
+    return default or []
+
+
 _load_dotenv(BASE_DIR / '.env')
 
 # Toggle S3 media storage with env var. Keep local storage as fallback.
@@ -54,11 +62,10 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-c#611#r7dhy80h1zny4
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = _env_bool('DJANGO_DEBUG', True)
 
-ALLOWED_HOSTS = [
-    host.strip()
-    for host in os.getenv('DJANGO_ALLOWED_HOSTS', '').split(',')
-    if host.strip()
-]
+ALLOWED_HOSTS = _env_list(
+    'DJANGO_ALLOWED_HOSTS',
+    default=['localhost', '127.0.0.1'] if DEBUG else [],
+)
 
 
 # Application definition
@@ -96,14 +103,18 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
 ]
 
-CORS_ALLOW_ALL_ORIGINS = True
-CORS_ALLOW_CREDENTIALS = True  # required for cookie (session) auth from frontend
+CORS_ALLOW_ALL_ORIGINS = _env_bool('CORS_ALLOW_ALL_ORIGINS', DEBUG)
+CORS_ALLOW_CREDENTIALS = _env_bool('CORS_ALLOW_CREDENTIALS', True)  # required for cookie (session) auth from frontend
+CORS_ALLOWED_ORIGINS = _env_list('CORS_ALLOWED_ORIGINS')
 
-# Allow CSRF-protected POSTs from the Vite dev server and local hosts
-CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-]
+# Allow CSRF-protected POSTs from configured origins.
+CSRF_TRUSTED_ORIGINS = _env_list(
+    'CSRF_TRUSTED_ORIGINS',
+    default=[
+        'http://localhost:3000',
+        'http://127.0.0.1:3000',
+    ] if DEBUG else [],
+)
 
 ROOT_URLCONF = 'smart_rental.urls'
 
