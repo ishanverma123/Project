@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import { updateMyProfile } from '../lib/api'
-import { useAuth } from '../lib/authContext'
+import { useAuth } from '../lib/useAuth'
 
 function initials(user) {
   const name = `${user?.first_name || ''} ${user?.last_name || ''}`.trim()

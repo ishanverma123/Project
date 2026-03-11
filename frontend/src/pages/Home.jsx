@@ -46,7 +46,6 @@ export default function Home() {
   useEffect(() => {
     loadRides()
     loadMyBookings()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const handleBookRide = async (rideId) => {

@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { useAuth } from '../lib/authContext'
+import { useAuth } from '../lib/useAuth'
 import './Layout.css'
 
 export default function Layout() {

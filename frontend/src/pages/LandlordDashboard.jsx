@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { deleteProperty, listDriverRides, updateBookingStatus, updateProperty } from '../lib/api'
-import { useAuth } from '../lib/authContext'
+import { useAuth } from '../lib/useAuth'
 import UserProfileModal from '../components/UserProfileModal'
 
 function toDateTimeLocalValue(value) {
@@ -249,7 +249,7 @@ export default function LandlordDashboard() {
   const [rides, setRides] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [savingId, setSavingId] = useState(null)
+  const [savingId] = useState(null)
   const [deletingId, setDeletingId] = useState(null)
   const [editingRide, setEditingRide] = useState(null)
   const [updatingRequestId, setUpdatingRequestId] = useState(null)

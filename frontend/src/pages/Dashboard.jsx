@@ -1,5 +1,5 @@
 import { Navigate } from 'react-router-dom'
-import { useAuth } from '../lib/authContext'
+import { useAuth } from '../lib/useAuth'
 import LandlordDashboard from './LandlordDashboard'
 import UserDashboard from './UserDashboard'
 
