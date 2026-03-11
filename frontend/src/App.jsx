@@ -5,6 +5,7 @@ import SignIn from './pages/SignIn'
 import Home from './pages/Home'
 import Dashboard from './pages/Dashboard'
 import CreateProperty from './pages/CreateProperty'
+import MyProfile from './pages/MyProfile'
 import RequireRole from './components/RequireRole'
 import { AuthProvider } from './lib/authContext'
 import './App.css'
@@ -38,6 +39,14 @@ export default function App() {
               element={
                 <RequireRole allow="driver">
                   <CreateProperty />
+                </RequireRole>
+              }
+            />
+            <Route
+              path="profile"
+              element={
+                <RequireRole allow={['traveller', 'driver']}>
+                  <MyProfile />
                 </RequireRole>
               }
             />

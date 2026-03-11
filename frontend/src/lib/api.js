@@ -59,6 +59,32 @@ export async function logout() {
   })
 }
 
+export async function updateMyProfile(formData) {
+  await getCsrfCookie()
+  const res = await fetch('/api/auth/me/', {
+    method: 'PATCH',
+    credentials: 'include',
+    headers: {
+      'X-CSRFToken': getCsrfToken(),
+    },
+    body: formData,
+  })
+  const json = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    throw new Error(json.email?.[0] || json.profile_photo?.[0] || json.detail || 'Failed to update profile')
+  }
+  return json
+}
+
+export async function getPublicUserProfile(userId) {
+  const res = await fetch(`/api/users/public/${userId}/`, { credentials: 'include' })
+  const json = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    throw new Error(json.detail || 'Failed to load profile')
+  }
+  return json
+}
+
 export async function createRide(formData) {
   await getCsrfCookie()
   const res = await fetch('/api/properties/', {

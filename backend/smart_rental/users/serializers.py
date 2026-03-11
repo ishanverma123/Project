@@ -7,6 +7,15 @@ from .models import CustomUser
 class UserSerializer(serializers.ModelSerializer):
     """Read-only user representation (e.g. for /me)."""
 
+    rides_listed_count = serializers.SerializerMethodField()
+    rides_booked_count = serializers.SerializerMethodField()
+
+    def get_rides_listed_count(self, obj):
+        return obj.property_set.count()
+
+    def get_rides_booked_count(self, obj):
+        return obj.ride_bookings.filter(status__in=["approved", "confirmed"]).count()
+
     class Meta:
         model = CustomUser
         fields = (
@@ -19,8 +28,23 @@ class UserSerializer(serializers.ModelSerializer):
             "profile_photo",
             "bio",
             "phone",
+            "rides_listed_count",
+            "rides_booked_count",
         )
         read_only_fields = fields
+
+
+class UserUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = (
+            "email",
+            "first_name",
+            "last_name",
+            "bio",
+            "phone",
+            "profile_photo",
+        )
 
 
 class RegisterSerializer(serializers.ModelSerializer):

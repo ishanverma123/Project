@@ -30,9 +30,11 @@ class PropertySerializer(serializers.ModelSerializer):
         for booking in obj.bookings.filter(status__in=['approved', 'confirmed']).select_related('user'):
             passengers.append(
                 {
+                    'user_id': booking.user.id,
                     'username': booking.user.username,
                     'name': f"{booking.user.first_name} {booking.user.last_name}".strip() or booking.user.username,
                     'passenger_count': booking.passenger_count,
+                    'profile_photo': booking.user.profile_photo.url if booking.user.profile_photo else None,
                 }
             )
         return passengers

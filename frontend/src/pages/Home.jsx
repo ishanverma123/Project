@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { createRideBooking, searchRides } from '../lib/api'
+import { createRideBooking, listMyBookings, searchRides } from '../lib/api'
+import UserProfileModal from '../components/UserProfileModal'
 
 export default function Home() {
   const [rides, setRides] = useState([])
@@ -8,6 +9,25 @@ export default function Home() {
   const [bookingError, setBookingError] = useState('')
   const [bookingSuccess, setBookingSuccess] = useState('')
   const [search, setSearch] = useState({ from_city: '', to_city: '', departure_date: '' })
+  const [myBookingsByRide, setMyBookingsByRide] = useState({})
+  const [selectedRide, setSelectedRide] = useState(null)
+  const [selectedProfileUserId, setSelectedProfileUserId] = useState(null)
+
+  const loadMyBookings = async () => {
+    try {
+      const bookings = await listMyBookings()
+      const map = {}
+      bookings.forEach((b) => {
+        const current = map[b.property]
+        if (!current || new Date(b.created_at) > new Date(current.created_at)) {
+          map[b.property] = b
+        }
+      })
+      setMyBookingsByRide(map)
+    } catch {
+      setMyBookingsByRide({})
+    }
+  }
 
   const loadRides = async (params = {}) => {
     setLoading(true)
@@ -25,6 +45,7 @@ export default function Home() {
 
   useEffect(() => {
     loadRides()
+    loadMyBookings()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -35,9 +56,22 @@ export default function Home() {
       await createRideBooking({ property: rideId, passenger_count: 1 })
       setBookingSuccess('Booking request sent to driver.')
       await loadRides(search)
+      await loadMyBookings()
     } catch (e) {
       setBookingError(e.message || 'Failed to book ride')
     }
+  }
+
+  const statusLabel = (status) => {
+    if (status === 'approved' || status === 'confirmed') return 'Approved'
+    if (status === 'rejected') return 'Cancelled'
+    return 'Requested'
+  }
+
+  const statusClass = (status) => {
+    if (status === 'approved' || status === 'confirmed') return 'inquiry-status-approved'
+    if (status === 'rejected') return 'inquiry-status-rejected'
+    return 'inquiry-status-pending'
   }
 
   const handleSearchSubmit = async (e) => {
@@ -48,6 +82,19 @@ export default function Home() {
   const handleChange = (e) => {
     const { name, value } = e.target
     setSearch((prev) => ({ ...prev, [name]: value }))
+  }
+
+  const formatDeparture = (ride) => {
+    if (!ride?.departure_datetime) return 'Not specified'
+    const date = new Date(ride.departure_datetime)
+    if (Number.isNaN(date.getTime())) return 'Not specified'
+    return date.toLocaleString([], {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    })
   }
 
   return (
@@ -100,14 +147,52 @@ export default function Home() {
           {!loading && rides.length === 0 && <p className="muted">No rides found for this search.</p>}
           {!loading &&
             rides.map((p, index) => {
+              const myBooking = myBookingsByRide[p.id]
+              const alreadyRequested = Boolean(myBooking)
               const gradientClass =
                 index % 3 === 0 ? 'property-card-image-1' : index % 3 === 1 ? 'property-card-image-2' : 'property-card-image-3'
               const imageStyle = p.image
                 ? { backgroundImage: `url(${p.image})`, backgroundSize: 'cover', backgroundPosition: 'center' }
                 : {}
               return (
-                <article key={p.id} className="property-card">
-                  <div className={`property-card-image ${gradientClass}`} style={imageStyle} />
+                <article
+                  key={p.id}
+                  className="property-card property-card-clickable"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setSelectedRide(p)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      setSelectedRide(p)
+                    }
+                  }}
+                >
+                  <div className={`property-card-image ${gradientClass}`} style={imageStyle}>
+                    <div className="ride-card-driver-avatar-wrap">
+                      {p.driver_profile_photo ? (
+                        <img
+                          src={p.driver_profile_photo}
+                          alt={p.driver_name || 'Driver'}
+                          className="ride-card-driver-avatar avatar-clickable"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setSelectedProfileUserId(p.driver)
+                          }}
+                        />
+                      ) : (
+                        <div
+                          className="ride-card-driver-avatar ride-card-driver-avatar-fallback avatar-clickable"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setSelectedProfileUserId(p.driver)
+                          }}
+                        >
+                          {(p.driver_name || 'D').slice(0, 1).toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                   <div className="property-card-body">
                     <h3>${p.price_per_seat} / seat</h3>
                     <p className="property-location">{p.title}</p>
@@ -116,14 +201,38 @@ export default function Home() {
                       Driver: {p.driver_name} · Seats left: {p.seats_left}
                     </p>
                     <p className="property-meta">Booked passengers: {p.booked_passengers_count}</p>
+                    {myBooking && (
+                      <div className="card-actions" style={{ marginTop: '0.35rem' }}>
+                        <span className={`inquiry-status ${statusClass(myBooking.status)}`}>
+                          {statusLabel(myBooking.status)}
+                        </span>
+                      </div>
+                    )}
                     {Array.isArray(p.booked_passengers) && p.booked_passengers.length > 0 && (
                       <p className="property-meta">
                         {p.booked_passengers.map((bp) => `${bp.name} (${bp.passenger_count})`).join(', ')}
                       </p>
                     )}
                     <div className="card-actions">
-                      <button type="button" onClick={() => handleBookRide(p.id)} disabled={p.seats_left <= 0}>
-                        {p.seats_left <= 0 ? 'Full' : 'Request booking'}
+                      <button
+                        type="button"
+                        className="property-card-secondary-btn"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setSelectedRide(p)
+                        }}
+                      >
+                        View details
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleBookRide(p.id)
+                        }}
+                        disabled={p.seats_left <= 0 || alreadyRequested}
+                      >
+                        {alreadyRequested ? 'Ride requested' : p.seats_left <= 0 ? 'Full' : 'Request booking'}
                       </button>
                     </div>
                   </div>
@@ -132,6 +241,61 @@ export default function Home() {
             })}
         </section>
       </div>
+
+      {selectedRide && (
+        <div className="inquiry-modal-backdrop ride-detail-backdrop" onClick={() => setSelectedRide(null)} role="presentation">
+          <div className="inquiry-modal ride-detail-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+            <div className="inquiry-modal-header">
+              <h2>{selectedRide.title}</h2>
+              <button type="button" className="inquiry-modal-close" onClick={() => setSelectedRide(null)} aria-label="Close details modal">
+                Close
+              </button>
+            </div>
+            <div className="ride-detail-grid">
+              <p><strong>Route:</strong> {selectedRide.from_city} to {selectedRide.to_city}</p>
+              <p><strong>Departure:</strong> {formatDeparture(selectedRide)}</p>
+              <p><strong>Driver:</strong> {selectedRide.driver_name || 'Not specified'}</p>
+              <p><strong>Car:</strong> {selectedRide.car_make || ''} {selectedRide.car_model || ''} {selectedRide.car_year ? `(${selectedRide.car_year})` : ''}</p>
+              <p><strong>Price:</strong> ${selectedRide.price_per_seat} per seat</p>
+              <p><strong>Seats:</strong> {selectedRide.seats_left} left of {selectedRide.max_passengers}</p>
+            </div>
+            {selectedRide.description && <p className="ride-detail-description">{selectedRide.description}</p>}
+            {Array.isArray(selectedRide.booked_passengers) && selectedRide.booked_passengers.length > 0 ? (
+              <div className="ride-detail-passengers">
+                <h4>Booked passengers</h4>
+                <ul>
+                  {selectedRide.booked_passengers.map((bp, idx) => (
+                    <li key={`${bp.name}-${idx}`} className="modal-passenger-item">
+                      {bp.profile_photo ? (
+                        <img
+                          src={bp.profile_photo}
+                          alt={bp.name}
+                          className="modal-passenger-avatar avatar-clickable"
+                          onClick={() => setSelectedProfileUserId(bp.user_id)}
+                        />
+                      ) : (
+                        <div
+                          className="modal-passenger-avatar modal-passenger-avatar-fallback avatar-clickable"
+                          onClick={() => setSelectedProfileUserId(bp.user_id)}
+                        >
+                          {(bp.name || 'P').slice(0, 1).toUpperCase()}
+                        </div>
+                      )}
+                      <span>{bp.name} ({bp.passenger_count} seat{bp.passenger_count > 1 ? 's' : ''})</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <p className="muted">No approved passengers yet.</p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {selectedProfileUserId && (
+        <UserProfileModal userId={selectedProfileUserId} onClose={() => setSelectedProfileUserId(null)} />
+      )}
     </div>
   )
 }

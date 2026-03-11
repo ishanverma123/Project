@@ -1,11 +1,13 @@
 from django.contrib.auth import login, logout
+from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .serializers import LoginSerializer, RegisterSerializer, UserSerializer
+from .models import CustomUser
+from .serializers import LoginSerializer, RegisterSerializer, UserSerializer, UserUpdateSerializer
 
 
 class RegisterView(APIView):
@@ -46,3 +48,17 @@ class CurrentUserView(APIView):
 
     def get(self, request: Request):
         return Response(UserSerializer(request.user).data)
+
+    def patch(self, request: Request):
+        serializer = UserUpdateSerializer(instance=request.user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(UserSerializer(request.user).data)
+
+
+class PublicUserProfileView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request: Request, user_id: int):
+        user = get_object_or_404(CustomUser, id=user_id)
+        return Response(UserSerializer(user).data)

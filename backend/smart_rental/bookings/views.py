@@ -64,6 +64,14 @@ class BookingViewSet(ModelViewSet):
         serializer.is_valid(raise_exception=True)
         ride = serializer.validated_data['property']
 
+        existing_active = Booking.objects.filter(
+            user=user,
+            property=ride,
+            status__in=['pending', 'approved', 'confirmed'],
+        ).exists()
+        if existing_active:
+            raise ValidationError({'detail': 'You have already requested this ride.'})
+
         confirmed = ride.bookings.filter(status__in=['approved', 'confirmed'])
         booked_seats = sum(item.passenger_count for item in confirmed)
         seats_left = max(ride.max_passengers - booked_seats, 0)

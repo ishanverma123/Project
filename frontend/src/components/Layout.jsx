@@ -28,6 +28,7 @@ export default function Layout() {
                 <>
                   {user.role === 'traveller' && <Link to="/home">Rides</Link>}
                   <Link to="/dashboard">Dashboard</Link>
+                  <Link to="/profile">My Profile</Link>
                 </>
               )}
               <span className="navbar-username">Hi, {user.first_name} {user.last_name}</span>

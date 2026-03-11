@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { deleteProperty, listDriverRides, updateBookingStatus, updateProperty } from '../lib/api'
+import { useAuth } from '../lib/authContext'
+import UserProfileModal from '../components/UserProfileModal'
 
 function toDateTimeLocalValue(value) {
   if (!value) return ''
@@ -243,6 +245,7 @@ function BookingRequestModal({ request, onClose, onDecision, loading }) {
 }
 
 export default function LandlordDashboard() {
+  const { user } = useAuth()
   const [rides, setRides] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -251,6 +254,7 @@ export default function LandlordDashboard() {
   const [editingRide, setEditingRide] = useState(null)
   const [updatingRequestId, setUpdatingRequestId] = useState(null)
   const [reviewRequest, setReviewRequest] = useState(null)
+  const [selectedProfileUserId, setSelectedProfileUserId] = useState(null)
 
   const loadRides = async () => {
     setLoading(true)
@@ -311,9 +315,14 @@ export default function LandlordDashboard() {
             <h1>Driver Dashboard</h1>
             <p className="muted">Manage rides, capacity, and booked passengers.</p>
           </div>
-          <Link className="button primary" to="/dashboard/new-ride">
-            Create a new ride
-          </Link>
+          <div className="dashboard-header-actions">
+            <Link className="button secondary" to="/profile">
+              My profile
+            </Link>
+            <Link className="button primary" to="/dashboard/new-ride">
+              Create a new ride
+            </Link>
+          </div>
         </header>
 
         {error && <div className="panel-error" role="alert">{error}</div>}
@@ -344,7 +353,25 @@ export default function LandlordDashboard() {
 
                 return (
                   <article key={ride.id} className="landlord-card">
-                    <div className={`property-card-image ${gradientClass}`} style={imageStyle} />
+                    <div className={`property-card-image ${gradientClass}`} style={imageStyle}>
+                      <div className="ride-card-driver-avatar-wrap">
+                        {user?.profile_photo ? (
+                          <img
+                            src={user.profile_photo}
+                            alt={user.first_name || user.username || 'Driver'}
+                            className="ride-card-driver-avatar avatar-clickable"
+                            onClick={() => setSelectedProfileUserId(user.id)}
+                          />
+                        ) : (
+                          <div
+                            className="ride-card-driver-avatar ride-card-driver-avatar-fallback avatar-clickable"
+                            onClick={() => setSelectedProfileUserId(user?.id)}
+                          >
+                            {(user?.first_name || user?.username || 'D').slice(0, 1).toUpperCase()}
+                          </div>
+                        )}
+                      </div>
+                    </div>
                     <div className="landlord-card-body">
                       <div className="landlord-card-top">
                         <h3>{ride.title}</h3>
@@ -379,7 +406,24 @@ export default function LandlordDashboard() {
                             <li key={`${ride.id}-${bp.username}`} className="inquiry-item">
                               <div className="inquiry-main">
                                 <div className="inquiry-header-row">
-                                  <span className="inquiry-tenant">@{bp.username}</span>
+                                  <span className="inquiry-tenant passenger-with-avatar">
+                                    {bp.profile_photo ? (
+                                      <img
+                                        src={bp.profile_photo}
+                                        alt={bp.name}
+                                        className="booking-driver-avatar avatar-clickable"
+                                        onClick={() => setSelectedProfileUserId(bp.user_id)}
+                                      />
+                                    ) : (
+                                      <span
+                                        className="booking-driver-avatar booking-driver-avatar-fallback avatar-clickable"
+                                        onClick={() => setSelectedProfileUserId(bp.user_id)}
+                                      >
+                                        {(bp.name || bp.username || 'P').slice(0, 1).toUpperCase()}
+                                      </span>
+                                    )}
+                                    @{bp.username}
+                                  </span>
                                 </div>
                                 <p className="inquiry-message">{bp.name} booked {bp.passenger_count} seat(s).</p>
                               </div>
@@ -429,6 +473,10 @@ export default function LandlordDashboard() {
           )}
         </section>
       </div>
+
+      {selectedProfileUserId && (
+        <UserProfileModal userId={selectedProfileUserId} onClose={() => setSelectedProfileUserId(null)} />
+      )}
 
       {editingRide && (
         <EditRideModal
