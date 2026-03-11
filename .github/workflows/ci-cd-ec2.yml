@@ -134,12 +134,24 @@ jobs:
             fi
 
             if [ -n "${PYTHON_VENV_PATH}" ] && [ -f "${PYTHON_VENV_PATH}/bin/activate" ]; then
-              # shellcheck disable=SC1090
-              source "${PYTHON_VENV_PATH}/bin/activate"
+              DEPLOY_VENV_PATH="${PYTHON_VENV_PATH}"
+            else
+              DEPLOY_VENV_PATH="${APP_DIR}/backend/smart_rental/.venv"
+              if [ ! -d "${DEPLOY_VENV_PATH}" ]; then
+                python3 -m venv "${DEPLOY_VENV_PATH}"
+              fi
             fi
 
+            # shellcheck disable=SC1090
+            source "${DEPLOY_VENV_PATH}/bin/activate"
+
+            python -m pip install --upgrade pip
+
             if [ -f requirements.txt ]; then
-              pip install -r requirements.txt
+              python -m pip install -r requirements.txt
+            else
+              echo "requirements.txt not found in backend/smart_rental; cannot install Django deps."
+              exit 1
             fi
 
             python3 manage.py migrate --noinput
