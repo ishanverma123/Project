@@ -71,6 +71,8 @@ sudo systemctl status <your-backend-service-name>
 Notes:
 - During each deploy, workflow writes Django, database, and AWS secrets into `backend/smart_rental/.env` on EC2.
 - `settings.py` already reads that `.env`, so backend picks up updated S3 values automatically.
+- Workflow now auto-installs `nodejs` and `npm` on EC2 if missing before frontend build.
+- Backend has `STATIC_ROOT` configured, so `collectstatic` can run safely in production.
 
 ## 3) Sudo permissions needed by workflow
 

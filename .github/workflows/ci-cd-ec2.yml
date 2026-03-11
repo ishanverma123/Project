@@ -192,6 +192,16 @@ jobs:
 
             echo "Deploying frontend..."
             cd "${APP_DIR}/frontend"
+
+            if ! command -v npm >/dev/null 2>&1; then
+              echo "npm is not installed on EC2; installing nodejs and npm..."
+              sudo apt-get update
+              sudo apt-get install -y nodejs npm
+            fi
+
+            echo "Node runtime: $(node --version)"
+            echo "npm runtime: $(npm --version)"
+
             npm ci
             npm run build
 
