@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/useAuth'
 import './Layout.css'
@@ -11,10 +11,6 @@ export default function Layout() {
 
   const isAuthPage = location.pathname === '/' || location.pathname === '/signin'
   const homeHref = user?.role === 'driver' ? '/dashboard' : '/home'
-
-  useEffect(() => {
-    setMobileMenuOpen(false)
-  }, [location.pathname])
 
   const handleSignOut = async () => {
     await logout()
@@ -29,7 +25,7 @@ export default function Layout() {
   return (
     <div className="layout">
       <header className={`layout-header ${isAuthPage ? 'layout-header-auth' : ''}`}>
-        <Link to={isAuthPage ? '/' : homeHref} className="logo">
+        <Link to={isAuthPage ? '/' : homeHref} className="logo" onClick={handleNavItemClick}>
           Carpool
         </Link>
         <button
