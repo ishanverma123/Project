@@ -37,6 +37,15 @@
   align-items: center;
 }
 
+.layout-menu-toggle {
+  display: none;
+  border: 1px solid #334155;
+  background: #0f172a;
+  color: #f8fafc;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.82rem;
+}
+
 .layout-header nav a {
   text-decoration: none;
   color: #e5e7eb;
@@ -82,20 +91,53 @@
 
 @media (max-width: 900px) {
   .layout-header {
-    flex-direction: column;
+    flex-direction: row;
+    flex-wrap: wrap;
     align-items: flex-start;
     gap: 0.75rem;
     padding: 0.75rem 1rem;
   }
 
+  .layout-menu-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: auto;
+    min-height: 38px;
+  }
+
   .layout-header nav {
+    display: none;
     width: 100%;
-    gap: 0.8rem;
-    flex-wrap: wrap;
+    gap: 0.55rem;
+    flex-direction: column;
+    align-items: stretch;
+    padding-top: 0.35rem;
+    border-top: 1px solid #1f2937;
+  }
+
+  .layout-header nav.nav-open {
+    display: flex;
+  }
+
+  .layout-header nav a,
+  .layout-header nav .navbar-username,
+  .layout-header nav .navbar-signout {
+    width: 100%;
+  }
+
+  .layout-header nav a {
+    padding: 0.45rem 0;
+    border-bottom: 1px solid rgba(51, 65, 85, 0.35);
   }
 
   .layout-main {
     padding: 1rem;
+  }
+
+  .navbar-signout {
+    margin-top: 0.25rem;
+    text-align: left;
   }
 }
 

@@ -2,6 +2,7 @@
 .page {
   max-width: 1120px;
   margin: 0 auto;
+  width: 100%;
 }
 
 .page h1 {
@@ -1286,6 +1287,11 @@
   gap: 1rem;
 }
 
+.profile-summary-card,
+.profile-form-card {
+  min-width: 0;
+}
+
 .profile-role-pill {
   display: inline-flex;
   align-items: center;
@@ -1400,6 +1406,7 @@
 
 .profile-form input,
 .profile-form textarea {
+  width: 100%;
   padding: 0.6rem 0.75rem;
   border: 1px solid #d1d5db;
   border-radius: 0.55rem;
@@ -1797,6 +1804,7 @@
   .dashboard-header-actions,
   .landlord-card-actions {
     width: 100%;
+    flex-wrap: wrap;
   }
 
   .create-property-actions .button,
@@ -1829,6 +1837,12 @@
     max-height: 92vh;
   }
 
+  .inquiry-modal {
+    width: min(96vw, 100% - 1rem);
+    max-height: 88vh;
+    overflow-y: auto;
+  }
+
   .edit-modal-row,
   .edit-modal-row-3,
   .profile-form-row-split {
@@ -1855,9 +1869,24 @@
   .user-profile-modal-grid {
     grid-template-columns: 1fr;
   }
+
+  .profile-grid {
+    grid-template-columns: 1fr;
+    max-height: calc(100vh - 190px);
+    overflow-y: auto;
+    padding-right: 0.2rem;
+  }
 }
 
 @media (max-width: 480px) {
+  .landlord-dashboard,
+  .dashboard-page,
+  .profile-page,
+  .home-page-inner {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
   .home-hero-content h1 {
     font-size: 1.6rem;
   }
@@ -1897,5 +1926,9 @@
   .profile-avatar-xl {
     width: 74px;
     height: 74px;
+  }
+
+  .profile-role-pill {
+    align-self: flex-start;
   }
 }
