@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 import os
+from typing import List, Optional
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -39,7 +40,7 @@ def _env_bool(name: str, default: bool = False) -> bool:
     return value.strip().lower() in {'1', 'true', 'yes', 'on'}
 
 
-def _env_list(name: str, default: list[str] | None = None) -> list[str]:
+def _env_list(name: str, default: Optional[List[str]] = None) -> List[str]:
     value = os.getenv(name, '')
     items = [item.strip() for item in value.split(',') if item.strip()]
     if items:

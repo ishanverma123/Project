@@ -1,5 +1,9 @@
 from rest_framework import serializers  # pyright: ignore[reportMissingImports]
 from .models import Property, PropertyInquiry
+from rental_core_engine.pricing_engine import PricingEngine
+
+
+pricing_engine = PricingEngine()
 
 
 class PropertySerializer(serializers.ModelSerializer):
@@ -11,6 +15,8 @@ class PropertySerializer(serializers.ModelSerializer):
     booked_passengers = serializers.SerializerMethodField()
     pending_requests_count = serializers.SerializerMethodField()
     pending_requests = serializers.SerializerMethodField()
+    platform_suggested_price_per_seat = serializers.SerializerMethodField()
+    fare_comparison = serializers.SerializerMethodField()
 
     def get_driver_name(self, obj):
         full_name = f"{obj.driver.first_name} {obj.driver.last_name}".strip()
@@ -40,11 +46,11 @@ class PropertySerializer(serializers.ModelSerializer):
         return passengers
 
     def get_pending_requests_count(self, obj):
-        return obj.bookings.filter(status='pending').count()
+        return obj.bookings.filter(status__in=['pending', 'countered']).count()
 
     def get_pending_requests(self, obj):
         requests = []
-        for booking in obj.bookings.filter(status='pending').select_related('user'):
+        for booking in obj.bookings.filter(status__in=['pending', 'countered']).select_related('user'):
             requests.append(
                 {
                     'id': booking.id,
@@ -52,9 +58,36 @@ class PropertySerializer(serializers.ModelSerializer):
                     'name': f"{booking.user.first_name} {booking.user.last_name}".strip() or booking.user.username,
                     'passenger_count': booking.passenger_count,
                     'status': booking.status,
+                    'listed_price_per_seat': booking.listed_price_per_seat,
+                    'platform_suggested_price_per_seat': booking.platform_suggested_price_per_seat,
+                    'requested_bid_per_seat': booking.requested_bid_per_seat,
+                    'driver_counter_offer_per_seat': booking.driver_counter_offer_per_seat,
                 }
             )
         return requests
+
+    def get_platform_suggested_price_per_seat(self, obj):
+        suggestion = pricing_engine.suggest_price_per_seat(
+            listed_price_per_seat=obj.price_per_seat,
+            departure_time=obj.departure_time,
+            seats_left=self.get_seats_left(obj),
+            max_passengers=obj.max_passengers,
+        )
+        return suggestion['suggested_price_per_seat']
+
+    def get_fare_comparison(self, obj):
+        suggestion = pricing_engine.suggest_price_per_seat(
+            listed_price_per_seat=obj.price_per_seat,
+            departure_time=obj.departure_time,
+            seats_left=self.get_seats_left(obj),
+            max_passengers=obj.max_passengers,
+        )
+        return {
+            'comparison': suggestion['comparison'],
+            'difference': suggestion['difference'],
+            'demand_multiplier': suggestion['demand_multiplier'],
+            'is_peak_hour': suggestion['is_peak_hour'],
+        }
 
     class Meta:
         model = Property

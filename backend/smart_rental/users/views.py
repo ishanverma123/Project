@@ -1,5 +1,7 @@
 from django.contrib.auth import login, logout
 from django.shortcuts import get_object_or_404
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.request import Request
@@ -33,6 +35,14 @@ class LoginView(APIView):
         user = serializer.validated_data["user"]
         login(request, user)
         return Response(UserSerializer(user).data)
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class CsrfTokenView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request: Request):
+        return Response({"detail": "CSRF cookie set"}, status=status.HTTP_200_OK)
 
 
 class LogoutView(APIView):

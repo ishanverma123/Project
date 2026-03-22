@@ -1,0 +1,30 @@
+# carpool-fare-engine
+
+Reusable pricing engine for carpool marketplaces. It computes a transparent fare suggestion with a detailed breakdown so applications can explain each component of the final price.
+
+## Features
+
+- Base fare + per-km + per-minute pricing
+- Demand surge multiplier
+- Time-of-day multiplier
+- Fuel surcharge support
+- Promo, loyalty, eco incentives, and holiday pricing rules
+- Full calculation breakdown
+
+## Quick start
+
+```python
+from carpool_fare_engine import FareConfig, FareRequest, calculate_fare
+
+config = FareConfig(
+    base_fare=40.0,
+    per_km_rate=9.5,
+    per_min_rate=0.6,
+    default_distance_km=12.0,
+    default_duration_min=28.0,
+)
+request = FareRequest(distance_km=14.0, duration_min=25.0, demand_multiplier=1.15)
+result = calculate_fare(config, request)
+print(result.total)
+print(result.as_dict())
+```

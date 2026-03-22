@@ -669,11 +669,26 @@
 .property-card .card-actions {
   margin-top: 0.75rem;
   display: flex;
+  flex-wrap: wrap;
   gap: 0.75rem;
 }
 
 .property-card .card-actions button {
   flex: 1;
+}
+
+.booking-inline-input {
+  min-width: 120px;
+  flex: 1;
+  padding: 0.45rem 0.55rem;
+  border-radius: 8px;
+  border: 1px solid #334155;
+  background: rgba(15, 23, 42, 0.35);
+  color: #f8fafc;
+}
+
+.booking-inline-input::placeholder {
+  color: #cbd5e1;
 }
 
 .property-card-secondary-btn {
@@ -767,6 +782,71 @@
   padding: 0.68rem 0.78rem;
 }
 
+.ride-bid-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 0 0 0.9rem;
+}
+
+.ride-bid-row input {
+  padding: 0.5rem 0.6rem;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  min-width: 145px;
+}
+
+.booking-negotiation-row {
+  margin-top: 0.45rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.booking-negotiation-row input {
+  padding: 0.4rem 0.5rem;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  min-width: 170px;
+}
+
+.booking-timeline {
+  margin-top: 0.7rem;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.booking-timeline-title {
+  margin: 0 0 0.35rem;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #334155;
+}
+
+.booking-timeline ul {
+  margin: 0;
+  padding-left: 1rem;
+}
+
+.booking-timeline li {
+  margin: 0.25rem 0;
+  color: #334155;
+}
+
+.booking-timeline-time {
+  display: block;
+  font-size: 0.74rem;
+  color: #64748b;
+}
+
+.booking-timeline-message {
+  display: block;
+  font-size: 0.85rem;
+}
+
 .ride-detail-passengers {
   background: rgba(15, 23, 42, 0.04);
   border: 1px solid #dbe5f2;
@@ -837,6 +917,13 @@
 @media (max-width: 520px) {
   .property-card .card-actions {
     flex-direction: column;
+  }
+
+  .booking-inline-input,
+  .ride-bid-row input,
+  .booking-negotiation-row input {
+    width: 100%;
+    min-width: 0;
   }
 
   .ride-detail-modal {

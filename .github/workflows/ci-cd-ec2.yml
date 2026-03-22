@@ -179,8 +179,18 @@ jobs:
               exit 1
             fi
 
+            # Install local custom pricing package from repository source on every deploy.
+            CUSTOM_FARE_PACKAGE_DIR="${APP_DIR}/backend/fare_pricing_package"
+            if [ -f "${CUSTOM_FARE_PACKAGE_DIR}/pyproject.toml" ]; then
+              echo "Installing custom fare package from ${CUSTOM_FARE_PACKAGE_DIR}"
+              python -m pip install "${CUSTOM_FARE_PACKAGE_DIR}"
+            else
+              echo "Custom fare package not found at ${CUSTOM_FARE_PACKAGE_DIR}; skipping local install."
+            fi
+
             echo "Running Django migration checks..."
             python -c "import django; print('Django import OK:', django.get_version())"
+            python -c "import carpool_fare_engine; print('Custom fare package import OK:', carpool_fare_engine.__file__)"
 
             python manage.py migrate --noinput
 

@@ -198,6 +198,8 @@ function EditRideModal({ ride, onClose, onSaved }) {
 }
 
 function BookingRequestModal({ request, onClose, onDecision, loading }) {
+  const [counterOffer, setCounterOffer] = useState('')
+
   if (!request) return null
 
   return (
@@ -215,6 +217,20 @@ function BookingRequestModal({ request, onClose, onDecision, loading }) {
           <p><strong>Traveller:</strong> @{request.username}</p>
           <p><strong>Name:</strong> {request.name}</p>
           <p><strong>Requested seats:</strong> {request.passenger_count}</p>
+          <p><strong>Listed price/seat:</strong> ${request.listed_price_per_seat || 0}</p>
+          <p><strong>Platform suggested/seat:</strong> ${request.platform_suggested_price_per_seat || 0}</p>
+          <p><strong>Traveller bid/seat:</strong> {request.requested_bid_per_seat ? `$${request.requested_bid_per_seat}` : 'No bid'}</p>
+          <label className="edit-field">
+            <span>Counter-offer per seat</span>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={counterOffer}
+              onChange={(e) => setCounterOffer(e.target.value)}
+              placeholder="e.g. 120.00"
+            />
+          </label>
           <p className="muted">Choose whether to accept or reject this booking request.</p>
         </div>
 
@@ -237,6 +253,14 @@ function BookingRequestModal({ request, onClose, onDecision, loading }) {
             disabled={loading}
           >
             {loading ? 'Updating…' : 'Accept'}
+          </button>
+          <button
+            type="button"
+            className="button secondary"
+            onClick={() => onDecision(request.id, 'countered', counterOffer)}
+            disabled={loading || !counterOffer}
+          >
+            Send counter
           </button>
         </div>
       </div>
@@ -293,11 +317,11 @@ export default function LandlordDashboard() {
     }
   }
 
-  const handleBookingDecision = async (bookingId, status) => {
+  const handleBookingDecision = async (bookingId, status, counterOffer = undefined) => {
     setUpdatingRequestId(bookingId)
     setError('')
     try {
-      await updateBookingStatus(bookingId, status)
+      await updateBookingStatus(bookingId, status, { driver_counter_offer_per_seat: counterOffer })
       await loadRides()
       setReviewRequest(null)
     } catch (e) {

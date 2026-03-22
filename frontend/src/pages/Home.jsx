@@ -12,6 +12,7 @@ export default function Home() {
   const [myBookingsByRide, setMyBookingsByRide] = useState({})
   const [selectedRide, setSelectedRide] = useState(null)
   const [selectedProfileUserId, setSelectedProfileUserId] = useState(null)
+  const [bookingDraftByRide, setBookingDraftByRide] = useState({})
 
   const loadMyBookings = async () => {
     try {
@@ -51,8 +52,19 @@ export default function Home() {
   const handleBookRide = async (rideId) => {
     setBookingError('')
     setBookingSuccess('')
+    const draft = bookingDraftByRide[rideId] || {}
+    const passengerCount = Number(draft.passenger_count || 1)
+    const bidValue = draft.requested_bid_per_seat
+    const payload = {
+      property: rideId,
+      passenger_count: Number.isFinite(passengerCount) && passengerCount > 0 ? passengerCount : 1,
+    }
+    if (bidValue !== undefined && bidValue !== null && String(bidValue).trim() !== '') {
+      payload.requested_bid_per_seat = bidValue
+    }
+
     try {
-      await createRideBooking({ property: rideId, passenger_count: 1 })
+      await createRideBooking(payload)
       setBookingSuccess('Booking request sent to driver.')
       await loadRides(search)
       await loadMyBookings()
@@ -64,12 +76,14 @@ export default function Home() {
   const statusLabel = (status) => {
     if (status === 'approved' || status === 'confirmed') return 'Approved'
     if (status === 'rejected') return 'Cancelled'
+    if (status === 'countered') return 'Driver countered'
     return 'Requested'
   }
 
   const statusClass = (status) => {
     if (status === 'approved' || status === 'confirmed') return 'inquiry-status-approved'
     if (status === 'rejected') return 'inquiry-status-rejected'
+    if (status === 'countered') return 'inquiry-status-pending'
     return 'inquiry-status-pending'
   }
 
@@ -94,6 +108,16 @@ export default function Home() {
       hour: 'numeric',
       minute: '2-digit',
     })
+  }
+
+  const handleDraftChange = (rideId, key, value) => {
+    setBookingDraftByRide((prev) => ({
+      ...prev,
+      [rideId]: {
+        ...(prev[rideId] || {}),
+        [key]: value,
+      },
+    }))
   }
 
   return (
@@ -199,6 +223,13 @@ export default function Home() {
                     <p className="property-meta">
                       Driver: {p.driver_name} · Seats left: {p.seats_left}
                     </p>
+                    <p className="property-meta">
+                      Platform suggested: ${p.platform_suggested_price_per_seat ?? p.price_per_seat} / seat
+                    </p>
+                    <p className="property-meta">
+                      Difference vs listed: ${p.fare_comparison?.difference ?? 0}
+                      {' '}({p.fare_comparison?.comparison || 'equal'})
+                    </p>
                     <p className="property-meta">Booked passengers: {p.booked_passengers_count}</p>
                     {myBooking && (
                       <div className="card-actions" style={{ marginTop: '0.35rem' }}>
@@ -213,6 +244,27 @@ export default function Home() {
                       </p>
                     )}
                     <div className="card-actions">
+                      <input
+                        type="number"
+                        min="1"
+                        step="1"
+                        className="booking-inline-input"
+                        value={bookingDraftByRide[p.id]?.passenger_count || 1}
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={(e) => handleDraftChange(p.id, 'passenger_count', e.target.value)}
+                        aria-label="Passenger count"
+                      />
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        className="booking-inline-input"
+                        placeholder="Your bid/seat"
+                        value={bookingDraftByRide[p.id]?.requested_bid_per_seat || ''}
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={(e) => handleDraftChange(p.id, 'requested_bid_per_seat', e.target.value)}
+                        aria-label="Bid price per seat"
+                      />
                       <button
                         type="button"
                         className="property-card-secondary-btn"
@@ -256,7 +308,35 @@ export default function Home() {
               <p><strong>Driver:</strong> {selectedRide.driver_name || 'Not specified'}</p>
               <p><strong>Car:</strong> {selectedRide.car_make || ''} {selectedRide.car_model || ''} {selectedRide.car_year ? `(${selectedRide.car_year})` : ''}</p>
               <p><strong>Price:</strong> ${selectedRide.price_per_seat} per seat</p>
+              <p><strong>Platform suggested:</strong> ${selectedRide.platform_suggested_price_per_seat ?? selectedRide.price_per_seat} per seat</p>
               <p><strong>Seats:</strong> {selectedRide.seats_left} left of {selectedRide.max_passengers}</p>
+            </div>
+            <div className="ride-bid-row">
+              <input
+                type="number"
+                min="1"
+                step="1"
+                value={bookingDraftByRide[selectedRide.id]?.passenger_count || 1}
+                onChange={(e) => handleDraftChange(selectedRide.id, 'passenger_count', e.target.value)}
+                aria-label="Passenger count"
+              />
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={bookingDraftByRide[selectedRide.id]?.requested_bid_per_seat || ''}
+                onChange={(e) => handleDraftChange(selectedRide.id, 'requested_bid_per_seat', e.target.value)}
+                placeholder="Your bid per seat"
+                aria-label="Bid per seat"
+              />
+              <button
+                type="button"
+                className="button primary"
+                onClick={() => handleBookRide(selectedRide.id)}
+                disabled={selectedRide.seats_left <= 0 || Boolean(myBookingsByRide[selectedRide.id])}
+              >
+                Request with bid
+              </button>
             </div>
             {selectedRide.description && <p className="ride-detail-description">{selectedRide.description}</p>}
             {Array.isArray(selectedRide.booked_passengers) && selectedRide.booked_passengers.length > 0 ? (

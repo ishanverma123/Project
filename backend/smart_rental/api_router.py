@@ -3,7 +3,7 @@ from rest_framework.routers import DefaultRouter
 
 from properties.views import PropertyInquiryViewSet, PropertyViewSet
 from bookings.views import BookingViewSet
-from users.views import CurrentUserView, LoginView, LogoutView, PublicUserProfileView, RegisterView
+from users.views import CsrfTokenView, CurrentUserView, LoginView, LogoutView, PublicUserProfileView, RegisterView
 
 router = DefaultRouter()
 router.register(r'properties', PropertyViewSet)
@@ -11,6 +11,7 @@ router.register(r'property-inquiries', PropertyInquiryViewSet, basename='propert
 router.register(r'bookings', BookingViewSet, basename='booking')
 
 urlpatterns = [
+    path('auth/csrf/', CsrfTokenView.as_view()),
     path('auth/register/', RegisterView.as_view()),
     path('auth/login/', LoginView.as_view()),
     path('auth/logout/', LogoutView.as_view()),

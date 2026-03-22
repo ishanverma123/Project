@@ -13,7 +13,7 @@ function getCsrfToken() {
 }
 
 async function getCsrfCookie() {
-  await fetch('/api/auth/login/', { method: 'GET', credentials: 'include' })
+  await fetch('/api/auth/csrf/', { method: 'GET', credentials: 'include' })
 }
 
 export async function register(data) {
@@ -150,12 +150,46 @@ export async function createRideBooking(data) {
   })
   const json = await res.json().catch(() => ({}))
   if (!res.ok) {
-    throw new Error(json.passenger_count?.[0] || json.property?.[0] || json.detail || 'Failed to book ride')
+    throw new Error(
+      json.passenger_count?.[0] ||
+      json.property?.[0] ||
+      json.requested_bid_per_seat?.[0] ||
+      json.detail ||
+      'Failed to book ride'
+    )
   }
   return json
 }
 
-export async function updateBookingStatus(id, status) {
+export async function updateBookingStatus(id, status, options = {}) {
+  await getCsrfCookie()
+  const payload = { status }
+  if (options.driver_counter_offer_per_seat !== undefined && options.driver_counter_offer_per_seat !== '') {
+    payload.driver_counter_offer_per_seat = options.driver_counter_offer_per_seat
+  }
+
+  const res = await fetch(`/api/bookings/${id}/`, {
+    method: 'PATCH',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCsrfToken(),
+    },
+    body: JSON.stringify(payload),
+  })
+  const json = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    throw new Error(
+      json.status?.[0] ||
+      json.driver_counter_offer_per_seat?.[0] ||
+      json.detail ||
+      'Failed to update booking request'
+    )
+  }
+  return json
+}
+
+export async function negotiateBookingBid(id, requestedBidPerSeat) {
   await getCsrfCookie()
   const res = await fetch(`/api/bookings/${id}/`, {
     method: 'PATCH',
@@ -164,11 +198,29 @@ export async function updateBookingStatus(id, status) {
       'Content-Type': 'application/json',
       'X-CSRFToken': getCsrfToken(),
     },
-    body: JSON.stringify({ status }),
+    body: JSON.stringify({ status: 'pending', requested_bid_per_seat: requestedBidPerSeat }),
   })
   const json = await res.json().catch(() => ({}))
   if (!res.ok) {
-    throw new Error(json.status?.[0] || json.detail || 'Failed to update booking request')
+    throw new Error(json.requested_bid_per_seat?.[0] || json.detail || 'Failed to submit negotiated bid')
+  }
+  return json
+}
+
+export async function acceptCounterOffer(id) {
+  await getCsrfCookie()
+  const res = await fetch(`/api/bookings/${id}/`, {
+    method: 'PATCH',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCsrfToken(),
+    },
+    body: JSON.stringify({ status: 'approved' }),
+  })
+  const json = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    throw new Error(json.status?.[0] || json.detail || 'Failed to accept counter-offer')
   }
   return json
 }
