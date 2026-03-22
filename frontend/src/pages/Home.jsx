@@ -172,6 +172,9 @@ export default function Home() {
             rides.map((p, index) => {
               const myBooking = myBookingsByRide[p.id]
               const alreadyRequested = Boolean(myBooking)
+              const fareDelta = Number(p.fare_comparison?.difference ?? 0)
+              const fareDeltaAbs = Math.abs(fareDelta).toFixed(2)
+              const fareTrend = fareDelta > 0 ? 'higher' : fareDelta < 0 ? 'lower' : 'equal'
               const gradientClass =
                 index % 3 === 0 ? 'property-card-image-1' : index % 3 === 1 ? 'property-card-image-2' : 'property-card-image-3'
               const imageStyle = p.image
@@ -218,6 +221,12 @@ export default function Home() {
                   </div>
                   <div className="property-card-body">
                     <h3>${p.price_per_seat} / seat</h3>
+                    <div className={`fare-badge fare-badge-${fareTrend}`}>
+                      Suggested ${p.platform_suggested_price_per_seat ?? p.price_per_seat}
+                      {fareTrend === 'equal'
+                        ? ' (matches listed)'
+                        : ` (${fareDeltaAbs} ${fareTrend} than listed)`}
+                    </div>
                     <p className="property-location">{p.title}</p>
                     <p className="property-address">{p.from_city} to {p.to_city}</p>
                     <p className="property-meta">
