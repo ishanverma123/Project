@@ -23,6 +23,15 @@ class PropertySerializer(serializers.ModelSerializer):
         if obj.id in cache:
             return cache[obj.id]
 
+        request = self.context.get('request')
+        rider_booking_count = 0
+        if request and request.user and request.user.is_authenticated and getattr(request.user, 'role', None) == 'traveller':
+            rider_booking_count = request.user.ride_bookings.filter(status__in=['approved', 'confirmed']).count()
+
+        car_make_value = (obj.car_make or '').lower()
+        car_model_value = (obj.car_model or '').lower()
+        eco_eligible = any(token in car_make_value or token in car_model_value for token in ['electric', 'ev', 'hybrid'])
+
         suggestion = pricing_engine.suggest_price_per_seat(
             listed_price_per_seat=obj.price_per_seat,
             departure_time=obj.departure_time,
@@ -30,11 +39,8 @@ class PropertySerializer(serializers.ModelSerializer):
             max_passengers=obj.max_passengers,
             distance_km=obj.distance_km,
             duration_min=obj.estimated_duration_min,
-            promo_discount_pct=obj.promo_discount_pct,
-            loyalty_discount_pct=obj.loyalty_discount_pct,
-            eco_incentive_pct=obj.eco_incentive_pct,
-            holiday_surcharge_pct=obj.holiday_surcharge_pct,
-            fuel_surcharge_per_km=obj.fuel_surcharge_per_km,
+            rider_booking_count=rider_booking_count,
+            eco_eligible=eco_eligible,
         )
         cache[obj.id] = suggestion
         return suggestion
@@ -102,12 +108,13 @@ class PropertySerializer(serializers.ModelSerializer):
             'inputs': {
                 'distance_km': obj.distance_km,
                 'estimated_duration_min': obj.estimated_duration_min,
-                'fuel_surcharge_per_km': obj.fuel_surcharge_per_km,
-                'promo_discount_pct': obj.promo_discount_pct,
-                'loyalty_discount_pct': obj.loyalty_discount_pct,
-                'eco_incentive_pct': obj.eco_incentive_pct,
-                'holiday_surcharge_pct': obj.holiday_surcharge_pct,
+                'fuel_surcharge_per_km': suggestion.get('policy_applied', {}).get('fuel_surcharge_per_km', 0),
+                'promo_discount_pct': suggestion.get('policy_applied', {}).get('promo_discount_pct', 0),
+                'loyalty_discount_pct': suggestion.get('policy_applied', {}).get('loyalty_discount_pct', 0),
+                'eco_incentive_pct': suggestion.get('policy_applied', {}).get('eco_incentive_pct', 0),
+                'holiday_surcharge_pct': suggestion.get('policy_applied', {}).get('holiday_surcharge_pct', 0),
             },
+            'policy_applied': suggestion.get('policy_applied', {}),
         }
 
     class Meta:

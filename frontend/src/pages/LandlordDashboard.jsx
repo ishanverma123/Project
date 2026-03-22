@@ -26,11 +26,6 @@ function EditRideModal({ ride, onClose, onSaved }) {
     max_passengers: ride.max_passengers ?? 1,
     distance_km: ride.distance_km ?? 12,
     estimated_duration_min: ride.estimated_duration_min ?? 25,
-    fuel_surcharge_per_km: ride.fuel_surcharge_per_km ?? 0.25,
-    promo_discount_pct: ride.promo_discount_pct ?? 0,
-    loyalty_discount_pct: ride.loyalty_discount_pct ?? 0,
-    eco_incentive_pct: ride.eco_incentive_pct ?? 0,
-    holiday_surcharge_pct: ride.holiday_surcharge_pct ?? 0,
     car_make: ride.car_make ?? '',
     car_model: ride.car_model ?? '',
     car_color: ride.car_color ?? '',
@@ -139,65 +134,7 @@ function EditRideModal({ ride, onClose, onSaved }) {
                   />
                 </label>
               </div>
-              <div className="edit-modal-row-3">
-                <label className="edit-field">
-                  <span>Fuel surcharge/km</span>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    name="fuel_surcharge_per_km"
-                    value={form.fuel_surcharge_per_km}
-                    onChange={handleChange}
-                  />
-                </label>
-                <label className="edit-field">
-                  <span>Promo %</span>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.1"
-                    name="promo_discount_pct"
-                    value={form.promo_discount_pct}
-                    onChange={handleChange}
-                  />
-                </label>
-                <label className="edit-field">
-                  <span>Loyalty %</span>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.1"
-                    name="loyalty_discount_pct"
-                    value={form.loyalty_discount_pct}
-                    onChange={handleChange}
-                  />
-                </label>
-              </div>
-              <div className="edit-modal-row">
-                <label className="edit-field">
-                  <span>Eco incentive %</span>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.1"
-                    name="eco_incentive_pct"
-                    value={form.eco_incentive_pct}
-                    onChange={handleChange}
-                  />
-                </label>
-                <label className="edit-field">
-                  <span>Holiday surcharge %</span>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.1"
-                    name="holiday_surcharge_pct"
-                    value={form.holiday_surcharge_pct}
-                    onChange={handleChange}
-                  />
-                </label>
-              </div>
+              <p className="muted">Platform policy engine automatically applies fuel, promo, loyalty, eco, and holiday adjustments.</p>
             </div>
           </div>
 

@@ -1,5 +1,6 @@
 from dataclasses import dataclass
-from typing import Dict
+from datetime import datetime
+from typing import Dict, Optional
 
 
 @dataclass
@@ -20,11 +21,15 @@ class FareRequest:
     distance_km: float = 0.0
     duration_min: float = 0.0
     demand_multiplier: float = 1.0
-    promo_discount_pct: float = 0.0
-    loyalty_discount_pct: float = 0.0
-    eco_incentive_pct: float = 0.0
-    holiday_surcharge_pct: float = 0.0
+    promo_discount_pct: Optional[float] = None
+    loyalty_discount_pct: Optional[float] = None
+    eco_incentive_pct: Optional[float] = None
+    holiday_surcharge_pct: Optional[float] = None
+    fuel_surcharge_per_km: Optional[float] = None
     is_peak_hour: bool = False
+    departure_time: Optional[datetime] = None
+    rider_booking_count: int = 0
+    eco_eligible: bool = False
 
 
 @dataclass
@@ -39,6 +44,7 @@ class FareResult:
     discounts_total: float
     subtotal: float
     total: float
+    policy_applied: Dict[str, float]
 
     def as_dict(self) -> Dict[str, float]:
         return {
@@ -52,4 +58,5 @@ class FareResult:
             "discounts_total": round(self.discounts_total, 2),
             "subtotal": round(self.subtotal, 2),
             "total": round(self.total, 2),
+            "policy_applied": self.policy_applied,
         }
