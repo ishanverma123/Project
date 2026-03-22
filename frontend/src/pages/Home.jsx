@@ -1,6 +1,25 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { createRideBooking, listMyBookings, searchRides } from '../lib/api'
 import UserProfileModal from '../components/UserProfileModal'
+
+const normalizeText = (value) => String(value || '').trim().toLowerCase()
+
+const matchesFilters = (ride, params = {}) => {
+  const fromCity = normalizeText(params.from_city)
+  const toCity = normalizeText(params.to_city)
+  const departureDate = String(params.departure_date || '').trim()
+
+  const rideFrom = normalizeText(ride?.from_city)
+  const rideTo = normalizeText(ride?.to_city)
+  const rideDepartureRaw = typeof ride?.departure_time === 'string' ? ride.departure_time : ''
+  const rideDepartureDate = rideDepartureRaw.slice(0, 10)
+
+  if (fromCity && !rideFrom.includes(fromCity)) return false
+  if (toCity && !rideTo.includes(toCity)) return false
+  if (departureDate && rideDepartureDate !== departureDate) return false
+
+  return true
+}
 
 export default function Home() {
   const [rides, setRides] = useState([])
@@ -14,26 +33,7 @@ export default function Home() {
   const [selectedProfileUserId, setSelectedProfileUserId] = useState(null)
   const [bookingDraftByRide, setBookingDraftByRide] = useState({})
 
-  const normalizeText = (value) => String(value || '').trim().toLowerCase()
-
-  const matchesFilters = (ride, params = {}) => {
-    const fromCity = normalizeText(params.from_city)
-    const toCity = normalizeText(params.to_city)
-    const departureDate = String(params.departure_date || '').trim()
-
-    const rideFrom = normalizeText(ride?.from_city)
-    const rideTo = normalizeText(ride?.to_city)
-    const rideDepartureRaw = typeof ride?.departure_time === 'string' ? ride.departure_time : ''
-    const rideDepartureDate = rideDepartureRaw.slice(0, 10)
-
-    if (fromCity && !rideFrom.includes(fromCity)) return false
-    if (toCity && !rideTo.includes(toCity)) return false
-    if (departureDate && rideDepartureDate !== departureDate) return false
-
-    return true
-  }
-
-  const loadMyBookings = async () => {
+  const loadMyBookings = useCallback(async () => {
     try {
       const bookings = await listMyBookings()
       const map = {}
@@ -47,9 +47,9 @@ export default function Home() {
     } catch {
       setMyBookingsByRide({})
     }
-  }
+  }, [])
 
-  const loadRides = async (params = {}) => {
+  const loadRides = useCallback(async (params = {}) => {
     setLoading(true)
     setError('')
     try {
@@ -61,12 +61,12 @@ export default function Home() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
     loadRides()
     loadMyBookings()
-  }, [])
+  }, [loadMyBookings, loadRides])
 
   const handleBookRide = async (rideId) => {
     setBookingError('')
@@ -214,7 +214,6 @@ export default function Home() {
             rides.map((p, index) => {
               const myBooking = myBookingsByRide[p.id]
               const alreadyRequested = Boolean(myBooking)
-              const isWaitingBooking = myBooking?.status === 'pending' || myBooking?.status === 'countered'
               const fareDelta = Number(p.fare_comparison?.difference ?? 0)
               const fareDeltaAbs = Math.abs(fareDelta).toFixed(2)
               const fareTrend = fareDelta > 0 ? 'higher' : fareDelta < 0 ? 'lower' : 'equal'
