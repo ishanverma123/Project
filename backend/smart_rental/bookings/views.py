@@ -186,6 +186,13 @@ class BookingViewSet(ModelViewSet):
             departure_time=ride.departure_time,
             seats_left=seats_left,
             max_passengers=ride.max_passengers,
+            distance_km=ride.distance_km,
+            duration_min=ride.estimated_duration_min,
+            promo_discount_pct=ride.promo_discount_pct,
+            loyalty_discount_pct=ride.loyalty_discount_pct,
+            eco_incentive_pct=ride.eco_incentive_pct,
+            holiday_surcharge_pct=ride.holiday_surcharge_pct,
+            fuel_surcharge_per_km=ride.fuel_surcharge_per_km,
         )
 
         created_booking = serializer.save(

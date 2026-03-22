@@ -18,6 +18,27 @@ class PropertySerializer(serializers.ModelSerializer):
     platform_suggested_price_per_seat = serializers.SerializerMethodField()
     fare_comparison = serializers.SerializerMethodField()
 
+    def _get_suggestion(self, obj):
+        cache = self.context.setdefault('_fare_suggestion_cache', {})
+        if obj.id in cache:
+            return cache[obj.id]
+
+        suggestion = pricing_engine.suggest_price_per_seat(
+            listed_price_per_seat=obj.price_per_seat,
+            departure_time=obj.departure_time,
+            seats_left=self.get_seats_left(obj),
+            max_passengers=obj.max_passengers,
+            distance_km=obj.distance_km,
+            duration_min=obj.estimated_duration_min,
+            promo_discount_pct=obj.promo_discount_pct,
+            loyalty_discount_pct=obj.loyalty_discount_pct,
+            eco_incentive_pct=obj.eco_incentive_pct,
+            holiday_surcharge_pct=obj.holiday_surcharge_pct,
+            fuel_surcharge_per_km=obj.fuel_surcharge_per_km,
+        )
+        cache[obj.id] = suggestion
+        return suggestion
+
     def get_driver_name(self, obj):
         full_name = f"{obj.driver.first_name} {obj.driver.last_name}".strip()
         return full_name or obj.driver.username
@@ -67,26 +88,26 @@ class PropertySerializer(serializers.ModelSerializer):
         return requests
 
     def get_platform_suggested_price_per_seat(self, obj):
-        suggestion = pricing_engine.suggest_price_per_seat(
-            listed_price_per_seat=obj.price_per_seat,
-            departure_time=obj.departure_time,
-            seats_left=self.get_seats_left(obj),
-            max_passengers=obj.max_passengers,
-        )
+        suggestion = self._get_suggestion(obj)
         return suggestion['suggested_price_per_seat']
 
     def get_fare_comparison(self, obj):
-        suggestion = pricing_engine.suggest_price_per_seat(
-            listed_price_per_seat=obj.price_per_seat,
-            departure_time=obj.departure_time,
-            seats_left=self.get_seats_left(obj),
-            max_passengers=obj.max_passengers,
-        )
+        suggestion = self._get_suggestion(obj)
         return {
             'comparison': suggestion['comparison'],
             'difference': suggestion['difference'],
             'demand_multiplier': suggestion['demand_multiplier'],
             'is_peak_hour': suggestion['is_peak_hour'],
+            'breakdown': suggestion['breakdown'],
+            'inputs': {
+                'distance_km': obj.distance_km,
+                'estimated_duration_min': obj.estimated_duration_min,
+                'fuel_surcharge_per_km': obj.fuel_surcharge_per_km,
+                'promo_discount_pct': obj.promo_discount_pct,
+                'loyalty_discount_pct': obj.loyalty_discount_pct,
+                'eco_incentive_pct': obj.eco_incentive_pct,
+                'holiday_surcharge_pct': obj.holiday_surcharge_pct,
+            },
         }
 
     class Meta:

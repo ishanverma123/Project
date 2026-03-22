@@ -854,6 +854,31 @@
   padding: 0.72rem 0.8rem;
 }
 
+.ride-fare-breakdown {
+  margin: 0.3rem 0 0.9rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid #dbe5f2;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.ride-fare-breakdown h4 {
+  margin: 0 0 0.4rem;
+  font-size: 0.9rem;
+  color: #0f172a;
+}
+
+.ride-fare-breakdown ul {
+  margin: 0;
+  padding-left: 1rem;
+}
+
+.ride-fare-breakdown li {
+  font-size: 0.84rem;
+  color: #334155;
+  margin: 0.2rem 0;
+}
+
 .ride-detail-passengers h4 {
   margin: 0 0 0.4rem;
   font-size: 0.9rem;

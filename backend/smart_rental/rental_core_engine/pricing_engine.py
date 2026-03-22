@@ -88,13 +88,17 @@ class PricingEngine:
         loyalty_discount_pct=0.0,
         eco_incentive_pct=0.0,
         holiday_surcharge_pct=0.0,
+        fuel_surcharge_per_km=None,
     ):
         demand_multiplier = self._demand_multiplier(seats_left=seats_left, max_passengers=max_passengers)
         is_peak_hour = self._is_peak_hour(departure_time)
+        config = dict(self.config)
+        if fuel_surcharge_per_km is not None:
+            config['fuel_surcharge_per_km'] = float(fuel_surcharge_per_km)
 
         if calculate_fare and FareConfig and FareRequest:
             fare = calculate_fare(
-                FareConfig(**self.config),
+                FareConfig(**config),
                 FareRequest(
                     distance_km=float(distance_km),
                     duration_min=float(duration_min),
@@ -109,7 +113,7 @@ class PricingEngine:
             breakdown = fare.as_dict()
         else:
             breakdown = _fallback_calculate_fare(
-                self.config,
+                config,
                 {
                     "distance_km": float(distance_km),
                     "duration_min": float(duration_min),

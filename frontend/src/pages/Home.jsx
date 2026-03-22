@@ -98,8 +98,8 @@ export default function Home() {
   }
 
   const formatDeparture = (ride) => {
-    if (!ride?.departure_datetime) return 'Not specified'
-    const date = new Date(ride.departure_datetime)
+    if (!ride?.departure_time) return 'Not specified'
+    const date = new Date(ride.departure_time)
     if (Number.isNaN(date.getTime())) return 'Not specified'
     return date.toLocaleString([], {
       weekday: 'short',
@@ -309,8 +309,27 @@ export default function Home() {
               <p><strong>Car:</strong> {selectedRide.car_make || ''} {selectedRide.car_model || ''} {selectedRide.car_year ? `(${selectedRide.car_year})` : ''}</p>
               <p><strong>Price:</strong> ${selectedRide.price_per_seat} per seat</p>
               <p><strong>Platform suggested:</strong> ${selectedRide.platform_suggested_price_per_seat ?? selectedRide.price_per_seat} per seat</p>
+              <p><strong>Demand multiplier:</strong> {selectedRide.fare_comparison?.demand_multiplier ?? 1}</p>
+              <p><strong>Fuel surcharge/km:</strong> ${selectedRide.fare_comparison?.inputs?.fuel_surcharge_per_km ?? 0}</p>
+              <p><strong>Distance / Duration:</strong> {selectedRide.fare_comparison?.inputs?.distance_km ?? 0} km / {selectedRide.fare_comparison?.inputs?.estimated_duration_min ?? 0} min</p>
               <p><strong>Seats:</strong> {selectedRide.seats_left} left of {selectedRide.max_passengers}</p>
             </div>
+            {selectedRide.fare_comparison?.breakdown && (
+              <div className="ride-fare-breakdown">
+                <h4>Price trail</h4>
+                <ul>
+                  <li>Base fare: ${selectedRide.fare_comparison.breakdown.base_component}</li>
+                  <li>Distance component: ${selectedRide.fare_comparison.breakdown.distance_component}</li>
+                  <li>Duration component: ${selectedRide.fare_comparison.breakdown.duration_component}</li>
+                  <li>Fuel component: ${selectedRide.fare_comparison.breakdown.fuel_component}</li>
+                  <li>Demand surge: ${selectedRide.fare_comparison.breakdown.surge_component}</li>
+                  <li>Peak-hour adjustment: ${selectedRide.fare_comparison.breakdown.peak_component}</li>
+                  <li>Holiday surcharge: ${selectedRide.fare_comparison.breakdown.holiday_component}</li>
+                  <li>Total discounts: -${selectedRide.fare_comparison.breakdown.discounts_total}</li>
+                  <li><strong>Final suggested fare: ${selectedRide.fare_comparison.breakdown.total}</strong></li>
+                </ul>
+              </div>
+            )}
             <div className="ride-bid-row">
               <input
                 type="number"

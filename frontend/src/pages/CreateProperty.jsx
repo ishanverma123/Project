@@ -16,6 +16,13 @@ export default function CreateProperty() {
     departure_time: '',
     price_per_seat: '',
     max_passengers: 1,
+    distance_km: '12',
+    estimated_duration_min: '25',
+    fuel_surcharge_per_km: '0.25',
+    promo_discount_pct: '0',
+    loyalty_discount_pct: '0',
+    eco_incentive_pct: '0',
+    holiday_surcharge_pct: '0',
     car_make: '',
     car_model: '',
     car_color: '',
@@ -59,6 +66,13 @@ export default function CreateProperty() {
     fd.append('departure_time', form.departure_time)
     fd.append('price_per_seat', String(form.price_per_seat))
     fd.append('max_passengers', String(form.max_passengers))
+    fd.append('distance_km', String(form.distance_km))
+    fd.append('estimated_duration_min', String(form.estimated_duration_min))
+    fd.append('fuel_surcharge_per_km', String(form.fuel_surcharge_per_km))
+    fd.append('promo_discount_pct', String(form.promo_discount_pct))
+    fd.append('loyalty_discount_pct', String(form.loyalty_discount_pct))
+    fd.append('eco_incentive_pct', String(form.eco_incentive_pct))
+    fd.append('holiday_surcharge_pct', String(form.holiday_surcharge_pct))
     fd.append('car_make', form.car_make.trim())
     fd.append('car_model', form.car_model.trim())
     fd.append('car_color', form.car_color.trim())
@@ -157,6 +171,56 @@ export default function CreateProperty() {
                   Dropoff point
                   <input name="dropoff_point" value={form.dropoff_point} onChange={handleChange} />
                 </label>
+                <label>
+                  Distance (km)
+                  <input name="distance_km" type="number" min="1" step="0.1" value={form.distance_km} onChange={handleChange} />
+                </label>
+                <label>
+                  Duration (min)
+                  <input name="estimated_duration_min" type="number" min="1" step="1" value={form.estimated_duration_min} onChange={handleChange} />
+                </label>
+              </div>
+            </section>
+
+            <section className="property-panel create-media-panel create-property-form">
+              <h2>Pricing analysis inputs</h2>
+              <div className="grid-3">
+                <label>
+                  Fuel surcharge per km
+                  <input
+                    name="fuel_surcharge_per_km"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={form.fuel_surcharge_per_km}
+                    onChange={handleChange}
+                  />
+                </label>
+                <label>
+                  Promo discount %
+                  <input name="promo_discount_pct" type="number" min="0" step="0.1" value={form.promo_discount_pct} onChange={handleChange} />
+                </label>
+                <label>
+                  Loyalty discount %
+                  <input name="loyalty_discount_pct" type="number" min="0" step="0.1" value={form.loyalty_discount_pct} onChange={handleChange} />
+                </label>
+              </div>
+              <div className="grid-3">
+                <label>
+                  Eco incentive %
+                  <input name="eco_incentive_pct" type="number" min="0" step="0.1" value={form.eco_incentive_pct} onChange={handleChange} />
+                </label>
+                <label>
+                  Holiday surcharge %
+                  <input
+                    name="holiday_surcharge_pct"
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    value={form.holiday_surcharge_pct}
+                    onChange={handleChange}
+                  />
+                </label>
               </div>
             </section>
 
@@ -218,6 +282,10 @@ export default function CreateProperty() {
               <div className="preview-row">
                 <span className="preview-label">Seats / Price</span>
                 <span className="preview-value">{form.max_passengers} / ${form.price_per_seat || '—'}</span>
+              </div>
+              <div className="preview-row">
+                <span className="preview-label">Distance / Duration</span>
+                <span className="preview-value">{form.distance_km} km / {form.estimated_duration_min} min</span>
               </div>
             </div>
           </aside>
