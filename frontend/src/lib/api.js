@@ -115,9 +115,13 @@ export async function createRide(formData) {
 
 export async function searchRides(params = {}) {
   const query = new URLSearchParams()
-  if (params.from_city) query.set('from_city', params.from_city)
-  if (params.to_city) query.set('to_city', params.to_city)
-  if (params.departure_date) query.set('departure_date', params.departure_date)
+  const fromCity = String(params.from_city || '').trim()
+  const toCity = String(params.to_city || '').trim()
+  const departureDate = String(params.departure_date || '').trim()
+
+  if (fromCity) query.set('from_city', fromCity)
+  if (toCity) query.set('to_city', toCity)
+  if (departureDate) query.set('departure_date', departureDate)
 
   const suffix = query.toString() ? `?${query.toString()}` : ''
   const res = await fetch(`/api/properties/${suffix}`, { credentials: 'include' })

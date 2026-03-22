@@ -14,6 +14,25 @@ export default function Home() {
   const [selectedProfileUserId, setSelectedProfileUserId] = useState(null)
   const [bookingDraftByRide, setBookingDraftByRide] = useState({})
 
+  const normalizeText = (value) => String(value || '').trim().toLowerCase()
+
+  const matchesFilters = (ride, params = {}) => {
+    const fromCity = normalizeText(params.from_city)
+    const toCity = normalizeText(params.to_city)
+    const departureDate = String(params.departure_date || '').trim()
+
+    const rideFrom = normalizeText(ride?.from_city)
+    const rideTo = normalizeText(ride?.to_city)
+    const rideDepartureRaw = typeof ride?.departure_time === 'string' ? ride.departure_time : ''
+    const rideDepartureDate = rideDepartureRaw.slice(0, 10)
+
+    if (fromCity && !rideFrom.includes(fromCity)) return false
+    if (toCity && !rideTo.includes(toCity)) return false
+    if (departureDate && rideDepartureDate !== departureDate) return false
+
+    return true
+  }
+
   const loadMyBookings = async () => {
     try {
       const bookings = await listMyBookings()
@@ -35,7 +54,7 @@ export default function Home() {
     setError('')
     try {
       const data = await searchRides(params)
-      setRides(data)
+      setRides(data.filter((ride) => matchesFilters(ride, params)))
     } catch (e) {
       setError(e.message || 'Failed to load rides')
       setRides([])
@@ -92,6 +111,12 @@ export default function Home() {
     await loadRides(search)
   }
 
+  const handleResetSearch = async () => {
+    const reset = { from_city: '', to_city: '', departure_date: '' }
+    setSearch(reset)
+    await loadRides(reset)
+  }
+
   const handleChange = (e) => {
     const { name, value } = e.target
     setSearch((prev) => ({ ...prev, [name]: value }))
@@ -128,30 +153,47 @@ export default function Home() {
           <h1>Find your next ride.</h1>
           <p>Search rides by journey and date, then book your seat instantly.</p>
           <form className="home-hero-search" onSubmit={handleSearchSubmit}>
-            <input
-              name="from_city"
-              type="text"
-              value={search.from_city}
-              onChange={handleChange}
-              placeholder="From city"
-              aria-label="Search by origin city"
-            />
-            <input
-              name="to_city"
-              type="text"
-              value={search.to_city}
-              onChange={handleChange}
-              placeholder="To city"
-              aria-label="Search by destination city"
-            />
-            <input
-              name="departure_date"
-              type="date"
-              value={search.departure_date}
-              onChange={handleChange}
-              aria-label="Search by departure date"
-            />
-            <button type="submit">Search</button>
+            <label className="search-field" htmlFor="from_city">
+              <span>From</span>
+              <input
+                id="from_city"
+                name="from_city"
+                type="text"
+                value={search.from_city}
+                onChange={handleChange}
+                placeholder="Origin city"
+                aria-label="Search by origin city"
+              />
+            </label>
+            <label className="search-field" htmlFor="to_city">
+              <span>To</span>
+              <input
+                id="to_city"
+                name="to_city"
+                type="text"
+                value={search.to_city}
+                onChange={handleChange}
+                placeholder="Destination city"
+                aria-label="Search by destination city"
+              />
+            </label>
+            <label className="search-field" htmlFor="departure_date">
+              <span>Date</span>
+              <input
+                id="departure_date"
+                name="departure_date"
+                type="date"
+                value={search.departure_date}
+                onChange={handleChange}
+                aria-label="Search by departure date"
+              />
+            </label>
+            <div className="search-actions">
+              <button type="submit">Search</button>
+              <button type="button" className="button secondary" onClick={handleResetSearch}>
+                Reset
+              </button>
+            </div>
           </form>
         </div>
       </section>
@@ -173,7 +215,6 @@ export default function Home() {
               const myBooking = myBookingsByRide[p.id]
               const alreadyRequested = Boolean(myBooking)
               const isWaitingBooking = myBooking?.status === 'pending' || myBooking?.status === 'countered'
-              const showBidInputs = !myBooking || isWaitingBooking
               const fareDelta = Number(p.fare_comparison?.difference ?? 0)
               const fareDeltaAbs = Math.abs(fareDelta).toFixed(2)
               const fareTrend = fareDelta > 0 ? 'higher' : fareDelta < 0 ? 'lower' : 'equal'
@@ -185,7 +226,7 @@ export default function Home() {
               return (
                 <article
                   key={p.id}
-                  className="property-card property-card-clickable"
+                  className={`property-card property-card-clickable property-card-list property-card-trend-${fareTrend}`}
                   role="button"
                   tabIndex={0}
                   onClick={() => setSelectedRide(p)}
@@ -222,20 +263,19 @@ export default function Home() {
                     </div>
                   </div>
                   <div className="property-card-body">
-                    <h3>${p.price_per_seat} / seat</h3>
-                    <div className={`fare-badge fare-badge-${fareTrend}`}>
+                    <div className="property-card-headline">
+                      <h3>{p.title}</h3>
+                      <span className="price-chip">${p.price_per_seat}/seat</span>
+                    </div>
+                    <div className={`fare-badge fare-badge-${fareTrend} fare-badge-inline`}>
                       Suggested ${p.platform_suggested_price_per_seat ?? p.price_per_seat}
                       {fareTrend === 'equal'
                         ? ' (matches listed)'
                         : ` (${fareDeltaAbs} ${fareTrend} than listed)`}
                     </div>
-                    <p className="property-location">{p.title}</p>
                     <p className="property-address">{p.from_city} to {p.to_city}</p>
                     <p className="property-meta">
                       Driver: {p.driver_name} · Seats left: {p.seats_left}
-                    </p>
-                    <p className="property-meta">
-                      Platform suggested: ${p.platform_suggested_price_per_seat ?? p.price_per_seat} / seat
                     </p>
                     <p className="property-meta">
                       Difference vs listed: ${p.fare_comparison?.difference ?? 0}
@@ -255,56 +295,15 @@ export default function Home() {
                       </p>
                     )}
                     <div className="card-actions">
-                      {showBidInputs && (
-                        <>
-                          <input
-                            type="number"
-                            min="1"
-                            step="1"
-                            className="booking-inline-input"
-                            value={bookingDraftByRide[p.id]?.passenger_count || 1}
-                            onClick={(e) => e.stopPropagation()}
-                            onChange={(e) => handleDraftChange(p.id, 'passenger_count', e.target.value)}
-                            aria-label="Passenger count"
-                          />
-                          <input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            className="booking-inline-input"
-                            placeholder="Your bid/seat"
-                            value={bookingDraftByRide[p.id]?.requested_bid_per_seat || ''}
-                            onClick={(e) => e.stopPropagation()}
-                            onChange={(e) => handleDraftChange(p.id, 'requested_bid_per_seat', e.target.value)}
-                            aria-label="Bid price per seat"
-                          />
-                        </>
-                      )}
                       <button
                         type="button"
-                        className="property-card-secondary-btn"
+                        className="property-card-secondary-btn open-modal-btn"
                         onClick={(e) => {
                           e.stopPropagation()
                           setSelectedRide(p)
                         }}
                       >
-                        View details
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleBookRide(p.id)
-                        }}
-                        disabled={p.seats_left <= 0 || alreadyRequested}
-                      >
-                        {isWaitingBooking
-                          ? 'Waiting for driver'
-                          : alreadyRequested
-                          ? 'Ride requested'
-                          : p.seats_left <= 0
-                          ? 'Full'
-                          : 'Request booking'}
+                        {alreadyRequested ? 'Manage in details' : 'Open details'}
                       </button>
                     </div>
                   </div>
@@ -335,6 +334,25 @@ export default function Home() {
               <p><strong>Distance / Duration:</strong> {selectedRide.fare_comparison?.inputs?.distance_km ?? 0} km / {selectedRide.fare_comparison?.inputs?.estimated_duration_min ?? 0} min</p>
               <p><strong>Seats:</strong> {selectedRide.seats_left} left of {selectedRide.max_passengers}</p>
             </div>
+            {(() => {
+              const selectedBooking = myBookingsByRide[selectedRide.id]
+              if (!selectedBooking) return <p className="muted">No booking yet. You can request seats with your bid below.</p>
+
+              return (
+                <div className="selected-booking-state">
+                  <p>
+                    <strong>Current booking status:</strong>{' '}
+                    <span className={`inquiry-status ${statusClass(selectedBooking.status)}`}>{statusLabel(selectedBooking.status)}</span>
+                  </p>
+                  {selectedBooking.requested_bid_per_seat && (
+                    <p><strong>Your latest bid:</strong> ${selectedBooking.requested_bid_per_seat} per seat</p>
+                  )}
+                  {selectedBooking.driver_counter_offer_per_seat && (
+                    <p><strong>Driver counter-offer:</strong> ${selectedBooking.driver_counter_offer_per_seat} per seat</p>
+                  )}
+                </div>
+              )
+            })()}
             {selectedRide.fare_comparison?.breakdown && (
               <div className="ride-fare-breakdown">
                 <h4>Price trail</h4>
