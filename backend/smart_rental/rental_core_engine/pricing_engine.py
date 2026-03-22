@@ -1,11 +1,12 @@
 from datetime import datetime
 
 try:
-    from carpool_fare_engine import FareConfig, FareRequest, calculate_fare
+    from carpool_fare_engine import FareConfig, FareRequest, calculate_fare, resolve_policy_adjustments
 except ImportError:
     FareConfig = None
     FareRequest = None
     calculate_fare = None
+    resolve_policy_adjustments = None
 
 
 def _fallback_calculate_fare(config, request):
@@ -84,17 +85,31 @@ class PricingEngine:
         max_passengers,
         distance_km=0.0,
         duration_min=0.0,
-        promo_discount_pct=0.0,
-        loyalty_discount_pct=0.0,
-        eco_incentive_pct=0.0,
-        holiday_surcharge_pct=0.0,
-        fuel_surcharge_per_km=None,
+        rider_booking_count=0,
+        eco_eligible=False,
     ):
         demand_multiplier = self._demand_multiplier(seats_left=seats_left, max_passengers=max_passengers)
         is_peak_hour = self._is_peak_hour(departure_time)
         config = dict(self.config)
-        if fuel_surcharge_per_km is not None:
-            config['fuel_surcharge_per_km'] = float(fuel_surcharge_per_km)
+
+        policy = {
+            'fuel_surcharge_per_km': config['fuel_surcharge_per_km'],
+            'promo_discount_pct': 0.0,
+            'loyalty_discount_pct': 0.0,
+            'eco_incentive_pct': 0.0,
+            'holiday_surcharge_pct': 0.0,
+            'is_holiday': 0,
+        }
+
+        if resolve_policy_adjustments and isinstance(departure_time, datetime):
+            resolved = resolve_policy_adjustments(
+                departure_time=departure_time,
+                demand_multiplier=demand_multiplier,
+                rider_booking_count=int(rider_booking_count or 0),
+                eco_eligible=bool(eco_eligible),
+            )
+            policy.update(resolved)
+            config['fuel_surcharge_per_km'] = float(policy['fuel_surcharge_per_km'])
 
         if calculate_fare and FareConfig and FareRequest:
             fare = calculate_fare(
@@ -103,14 +118,19 @@ class PricingEngine:
                     distance_km=float(distance_km),
                     duration_min=float(duration_min),
                     demand_multiplier=demand_multiplier,
-                    promo_discount_pct=float(promo_discount_pct),
-                    loyalty_discount_pct=float(loyalty_discount_pct),
-                    eco_incentive_pct=float(eco_incentive_pct),
-                    holiday_surcharge_pct=float(holiday_surcharge_pct),
+                    promo_discount_pct=None,
+                    loyalty_discount_pct=None,
+                    eco_incentive_pct=None,
+                    holiday_surcharge_pct=None,
+                    fuel_surcharge_per_km=None,
                     is_peak_hour=is_peak_hour,
+                    departure_time=departure_time,
+                    rider_booking_count=int(rider_booking_count or 0),
+                    eco_eligible=bool(eco_eligible),
                 ),
             )
             breakdown = fare.as_dict()
+            policy = dict(breakdown.get('policy_applied') or policy)
         else:
             breakdown = _fallback_calculate_fare(
                 config,
@@ -118,13 +138,14 @@ class PricingEngine:
                     "distance_km": float(distance_km),
                     "duration_min": float(duration_min),
                     "demand_multiplier": demand_multiplier,
-                    "promo_discount_pct": float(promo_discount_pct),
-                    "loyalty_discount_pct": float(loyalty_discount_pct),
-                    "eco_incentive_pct": float(eco_incentive_pct),
-                    "holiday_surcharge_pct": float(holiday_surcharge_pct),
+                    "promo_discount_pct": float(policy['promo_discount_pct']),
+                    "loyalty_discount_pct": float(policy['loyalty_discount_pct']),
+                    "eco_incentive_pct": float(policy['eco_incentive_pct']),
+                    "holiday_surcharge_pct": float(policy['holiday_surcharge_pct']),
                     "is_peak_hour": is_peak_hour,
                 },
             )
+            breakdown['policy_applied'] = policy
 
         suggested = float(breakdown["total"])
         listed = float(listed_price_per_seat or 0)
@@ -138,5 +159,6 @@ class PricingEngine:
             "comparison": comparison,
             "demand_multiplier": demand_multiplier,
             "is_peak_hour": is_peak_hour,
+            "policy_applied": policy,
             "breakdown": breakdown,
         }

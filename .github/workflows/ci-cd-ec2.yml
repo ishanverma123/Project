@@ -10,6 +10,8 @@ env:
   APP_DIR: ${{ secrets.EC2_APP_DIR }}
   BACKEND_SERVICE_NAME: ${{ secrets.BACKEND_SERVICE_NAME }}
   FRONTEND_DEPLOY_DIR: ${{ secrets.FRONTEND_DEPLOY_DIR }}
+  DEPLOY_COMMIT_SHA: ${{ github.sha }}
+  DEPLOY_REF_NAME: ${{ github.ref_name }}
   PYTHON_VENV_PATH: ${{ secrets.PYTHON_VENV_PATH }}
   DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
   DJANGO_DEBUG: ${{ secrets.DJANGO_DEBUG }}
@@ -64,7 +66,7 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script_stop: true
-          envs: APP_DIR,BACKEND_SERVICE_NAME,FRONTEND_DEPLOY_DIR,PYTHON_VENV_PATH,DJANGO_SECRET_KEY,DJANGO_DEBUG,DJANGO_ALLOWED_HOSTS,DB_NAME,DB_USER,DB_PASSWORD,DB_HOST,DB_PORT,USE_S3,AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_SESSION_TOKEN,AWS_STORAGE_BUCKET_NAME,AWS_S3_REGION_NAME,AWS_S3_CUSTOM_DOMAIN
+          envs: APP_DIR,BACKEND_SERVICE_NAME,FRONTEND_DEPLOY_DIR,DEPLOY_COMMIT_SHA,DEPLOY_REF_NAME,PYTHON_VENV_PATH,DJANGO_SECRET_KEY,DJANGO_DEBUG,DJANGO_ALLOWED_HOSTS,DB_NAME,DB_USER,DB_PASSWORD,DB_HOST,DB_PORT,USE_S3,AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_SESSION_TOKEN,AWS_STORAGE_BUCKET_NAME,AWS_S3_REGION_NAME,AWS_S3_CUSTOM_DOMAIN
           script: |
             set -euxo pipefail
 
@@ -81,6 +83,8 @@ jobs:
             cd "${APP_DIR}"
             git fetch --all --prune
             git reset --hard origin/main
+            echo "Repository now at commit: $(git rev-parse HEAD)"
+            echo "Workflow commit: ${DEPLOY_COMMIT_SHA:-unknown} on ref ${DEPLOY_REF_NAME:-unknown}"
 
             echo "Deploying backend..."
             cd "${APP_DIR}/backend/smart_rental"
@@ -215,11 +219,40 @@ jobs:
             npm ci
             npm run build
 
-            if [ -n "${FRONTEND_DEPLOY_DIR}" ]; then
-              sudo mkdir -p "${FRONTEND_DEPLOY_DIR}"
-              sudo rsync -av --delete dist/ "${FRONTEND_DEPLOY_DIR}/"
-            else
-              echo "FRONTEND_DEPLOY_DIR is empty; skipping dist publish."
+            if [ ! -f dist/index.html ]; then
+              echo "Frontend build output missing dist/index.html"
+              exit 1
+            fi
+
+            if [ -z "${FRONTEND_DEPLOY_DIR}" ]; then
+              echo "FRONTEND_DEPLOY_DIR is empty; cannot publish frontend."
+              exit 1
+            fi
+
+            echo "Publishing frontend dist to ${FRONTEND_DEPLOY_DIR}"
+            sudo mkdir -p "${FRONTEND_DEPLOY_DIR}"
+            sudo rsync -av --delete dist/ "${FRONTEND_DEPLOY_DIR}/"
+
+            # Write deployment marker for quick verification on server.
+            DEPLOYED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            printf '{"commit":"%s","ref":"%s","deployed_at":"%s"}\n' \
+              "${DEPLOY_COMMIT_SHA:-unknown}" \
+              "${DEPLOY_REF_NAME:-unknown}" \
+              "${DEPLOYED_AT}" \
+              | sudo tee "${FRONTEND_DEPLOY_DIR}/deploy-meta.json" >/dev/null
+
+            if [ ! -f "${FRONTEND_DEPLOY_DIR}/index.html" ]; then
+              echo "Frontend deploy validation failed: index.html not found in ${FRONTEND_DEPLOY_DIR}"
+              exit 1
+            fi
+
+            LOCAL_INDEX_SUM="$(sha256sum dist/index.html | awk '{print $1}')"
+            DEPLOYED_INDEX_SUM="$(sudo sha256sum "${FRONTEND_DEPLOY_DIR}/index.html" | awk '{print $1}')"
+            echo "Local index checksum: ${LOCAL_INDEX_SUM}"
+            echo "Deployed index checksum: ${DEPLOYED_INDEX_SUM}"
+            if [ "${LOCAL_INDEX_SUM}" != "${DEPLOYED_INDEX_SUM}" ]; then
+              echo "Frontend deploy validation failed: checksums do not match."
+              exit 1
             fi
 
             echo "Deployment finished."
