@@ -462,6 +462,7 @@
 
 /* Home hero + listings */
 .home-page {
+  padding: 21px;
   background: #020617;
   color: #f9fafb;
 }
