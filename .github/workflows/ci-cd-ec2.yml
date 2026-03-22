@@ -224,6 +224,9 @@ jobs:
               exit 1
             fi
 
+            # Normalize deploy dir from secrets to avoid hidden CR/LF or trailing spaces.
+            FRONTEND_DEPLOY_DIR="$(printf '%s' "${FRONTEND_DEPLOY_DIR}" | tr -d '\r' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+
             if [ -z "${FRONTEND_DEPLOY_DIR}" ]; then
               echo "FRONTEND_DEPLOY_DIR is empty; cannot publish frontend."
               exit 1
@@ -246,8 +249,14 @@ jobs:
               exit 1
             fi
 
-            LOCAL_INDEX_SUM="$(sha256sum dist/index.html | awk '{print $1}')"
-            DEPLOYED_INDEX_SUM="$(sudo sha256sum "${FRONTEND_DEPLOY_DIR}/index.html" | awk '{print $1}')"
+            LOCAL_INDEX_SUM="$(sha256sum dist/index.html | awk '{print $1}' | tr -cd '0-9a-fA-F' | head -c 64)"
+            DEPLOYED_INDEX_SUM="$(sudo sha256sum "${FRONTEND_DEPLOY_DIR}/index.html" | awk '{print $1}' | tr -cd '0-9a-fA-F' | head -c 64)"
+
+            if [ "${#LOCAL_INDEX_SUM}" -ne 64 ] || [ "${#DEPLOYED_INDEX_SUM}" -ne 64 ]; then
+              echo "Frontend deploy validation failed: could not parse 64-char checksums."
+              exit 1
+            fi
+
             echo "Local index checksum: ${LOCAL_INDEX_SUM}"
             echo "Deployed index checksum: ${DEPLOYED_INDEX_SUM}"
             if [ "${LOCAL_INDEX_SUM}" != "${DEPLOYED_INDEX_SUM}" ]; then
