@@ -1,6 +1,21 @@
 import { useEffect, useState } from 'react'
 import { AuthContext } from './authContextStore'
 
+const AUTH_REQUEST_TIMEOUT_MS = 8000
+
+function withTimeout(signal, timeoutMs = AUTH_REQUEST_TIMEOUT_MS) {
+  const controller = new AbortController()
+  const timerId = setTimeout(() => controller.abort(), timeoutMs)
+
+  const cleanup = () => clearTimeout(timerId)
+
+  if (signal) {
+    signal.addEventListener('abort', () => controller.abort(), { once: true })
+  }
+
+  return { signal: controller.signal, cleanup }
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -9,9 +24,11 @@ export function AuthProvider({ children }) {
     let cancelled = false
 
     async function fetchMe() {
+      const { signal, cleanup } = withTimeout()
       try {
         const res = await fetch('/api/auth/me/', {
           credentials: 'include',
+          signal,
         })
         if (!res.ok) {
           if (!cancelled) setUser(null)
@@ -22,6 +39,7 @@ export function AuthProvider({ children }) {
       } catch {
         if (!cancelled) setUser(null)
       } finally {
+        cleanup()
         if (!cancelled) setLoading(false)
       }
     }
@@ -35,9 +53,11 @@ export function AuthProvider({ children }) {
 
   const refreshUser = async () => {
     setLoading(true)
+    const { signal, cleanup } = withTimeout()
     try {
       const res = await fetch('/api/auth/me/', {
         credentials: 'include',
+        signal,
       })
       if (!res.ok) {
         setUser(null)
@@ -48,6 +68,7 @@ export function AuthProvider({ children }) {
     } catch {
       setUser(null)
     } finally {
+      cleanup()
       setLoading(false)
     }
   }
