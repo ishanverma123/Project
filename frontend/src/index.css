@@ -1,12 +1,23 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Source+Sans+3:wght@400;500;600&display=swap');
+
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: 'Source Sans 3', sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
-  /* Dark theme with white text */
-  color-scheme: dark;
-  color: #f9fafb;
-  background-color: #020617;
+  color: #102135;
+  background-color: #f4f8ff;
+
+  --brand-900: #14233b;
+  --brand-700: #1f4a7a;
+  --accent: #f36f45;
+  --accent-strong: #d8532a;
+  --surface: #ffffff;
+  --surface-muted: #f7faff;
+  --text: #13263d;
+  --text-muted: #5f7187;
+  --border: #dce6f2;
+  --shadow-soft: 0 14px 32px rgba(13, 34, 63, 0.12);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -20,11 +31,11 @@
 
 a {
   font-weight: 500;
-  color: #f97373;
+  color: var(--brand-700);
   text-decoration: inherit;
 }
 a:hover {
-  color: #fecaca;
+  color: var(--accent-strong);
 }
 
 body {
@@ -32,6 +43,11 @@ body {
   min-width: 320px;
   min-height: 100vh;
   overflow-x: hidden;
+  color: var(--text);
+  background:
+    radial-gradient(1200px 500px at 10% -10%, rgba(31, 74, 122, 0.16), transparent 60%),
+    radial-gradient(900px 450px at 100% 0%, rgba(243, 111, 69, 0.13), transparent 62%),
+    #f4f8ff;
 }
 
 #root {
@@ -41,26 +57,36 @@ body {
 }
 
 h1 {
-  font-size: 3.2em;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: clamp(1.9rem, 3.2vw, 2.8rem);
   line-height: 1.1;
 }
 
+h2,
+h3,
+h4 {
+  font-family: 'Space Grotesk', sans-serif;
+}
+
 button {
-  border-radius: 8px;
+  border-radius: 10px;
   border: 1px solid transparent;
-  padding: 0.6em 1.2em;
+  padding: 0.56em 1.05em;
   font-size: 1em;
-  font-weight: 500;
+  font-weight: 600;
   font-family: inherit;
-  background-color: #ef4444;
-  color: #f9fafb;
+  background: linear-gradient(140deg, var(--accent), var(--accent-strong));
+  color: #ffffff;
   cursor: pointer;
-  transition: border-color 0.25s, background-color 0.25s;
+  transition: transform 0.14s ease, box-shadow 0.14s ease, filter 0.14s ease;
+  box-shadow: 0 8px 22px rgba(243, 111, 69, 0.25);
 }
 button:hover {
-  border-color: #b91c1c;
+  transform: translateY(-1px);
+  filter: brightness(0.98);
 }
 button:focus,
 button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+  outline: 3px solid rgba(31, 74, 122, 0.35);
+  outline-offset: 2px;
 }

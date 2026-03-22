@@ -172,6 +172,8 @@ export default function Home() {
             rides.map((p, index) => {
               const myBooking = myBookingsByRide[p.id]
               const alreadyRequested = Boolean(myBooking)
+              const isWaitingBooking = myBooking?.status === 'pending' || myBooking?.status === 'countered'
+              const showBidInputs = !myBooking || isWaitingBooking
               const fareDelta = Number(p.fare_comparison?.difference ?? 0)
               const fareDeltaAbs = Math.abs(fareDelta).toFixed(2)
               const fareTrend = fareDelta > 0 ? 'higher' : fareDelta < 0 ? 'lower' : 'equal'
@@ -253,27 +255,31 @@ export default function Home() {
                       </p>
                     )}
                     <div className="card-actions">
-                      <input
-                        type="number"
-                        min="1"
-                        step="1"
-                        className="booking-inline-input"
-                        value={bookingDraftByRide[p.id]?.passenger_count || 1}
-                        onClick={(e) => e.stopPropagation()}
-                        onChange={(e) => handleDraftChange(p.id, 'passenger_count', e.target.value)}
-                        aria-label="Passenger count"
-                      />
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        className="booking-inline-input"
-                        placeholder="Your bid/seat"
-                        value={bookingDraftByRide[p.id]?.requested_bid_per_seat || ''}
-                        onClick={(e) => e.stopPropagation()}
-                        onChange={(e) => handleDraftChange(p.id, 'requested_bid_per_seat', e.target.value)}
-                        aria-label="Bid price per seat"
-                      />
+                      {showBidInputs && (
+                        <>
+                          <input
+                            type="number"
+                            min="1"
+                            step="1"
+                            className="booking-inline-input"
+                            value={bookingDraftByRide[p.id]?.passenger_count || 1}
+                            onClick={(e) => e.stopPropagation()}
+                            onChange={(e) => handleDraftChange(p.id, 'passenger_count', e.target.value)}
+                            aria-label="Passenger count"
+                          />
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            className="booking-inline-input"
+                            placeholder="Your bid/seat"
+                            value={bookingDraftByRide[p.id]?.requested_bid_per_seat || ''}
+                            onClick={(e) => e.stopPropagation()}
+                            onChange={(e) => handleDraftChange(p.id, 'requested_bid_per_seat', e.target.value)}
+                            aria-label="Bid price per seat"
+                          />
+                        </>
+                      )}
                       <button
                         type="button"
                         className="property-card-secondary-btn"
@@ -292,7 +298,13 @@ export default function Home() {
                         }}
                         disabled={p.seats_left <= 0 || alreadyRequested}
                       >
-                        {alreadyRequested ? 'Ride requested' : p.seats_left <= 0 ? 'Full' : 'Request booking'}
+                        {isWaitingBooking
+                          ? 'Waiting for driver'
+                          : alreadyRequested
+                          ? 'Ride requested'
+                          : p.seats_left <= 0
+                          ? 'Full'
+                          : 'Request booking'}
                       </button>
                     </div>
                   </div>
@@ -339,33 +351,45 @@ export default function Home() {
                 </ul>
               </div>
             )}
-            <div className="ride-bid-row">
-              <input
-                type="number"
-                min="1"
-                step="1"
-                value={bookingDraftByRide[selectedRide.id]?.passenger_count || 1}
-                onChange={(e) => handleDraftChange(selectedRide.id, 'passenger_count', e.target.value)}
-                aria-label="Passenger count"
-              />
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={bookingDraftByRide[selectedRide.id]?.requested_bid_per_seat || ''}
-                onChange={(e) => handleDraftChange(selectedRide.id, 'requested_bid_per_seat', e.target.value)}
-                placeholder="Your bid per seat"
-                aria-label="Bid per seat"
-              />
-              <button
-                type="button"
-                className="button primary"
-                onClick={() => handleBookRide(selectedRide.id)}
-                disabled={selectedRide.seats_left <= 0 || Boolean(myBookingsByRide[selectedRide.id])}
-              >
-                Request with bid
-              </button>
-            </div>
+            {(() => {
+              const selectedBooking = myBookingsByRide[selectedRide.id]
+              const selectedIsWaiting = selectedBooking?.status === 'pending' || selectedBooking?.status === 'countered'
+              const selectedShowBidInputs = !selectedBooking || selectedIsWaiting
+
+              if (!selectedShowBidInputs) {
+                return null
+              }
+
+              return (
+                <div className="ride-bid-row">
+                  <input
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={bookingDraftByRide[selectedRide.id]?.passenger_count || 1}
+                    onChange={(e) => handleDraftChange(selectedRide.id, 'passenger_count', e.target.value)}
+                    aria-label="Passenger count"
+                  />
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={bookingDraftByRide[selectedRide.id]?.requested_bid_per_seat || ''}
+                    onChange={(e) => handleDraftChange(selectedRide.id, 'requested_bid_per_seat', e.target.value)}
+                    placeholder="Your bid per seat"
+                    aria-label="Bid per seat"
+                  />
+                  <button
+                    type="button"
+                    className="button primary"
+                    onClick={() => handleBookRide(selectedRide.id)}
+                    disabled={selectedRide.seats_left <= 0 || Boolean(selectedBooking)}
+                  >
+                    {selectedIsWaiting ? 'Waiting for driver' : 'Request with bid'}
+                  </button>
+                </div>
+              )
+            })()}
             {selectedRide.description && <p className="ride-detail-description">{selectedRide.description}</p>}
             {Array.isArray(selectedRide.booked_passengers) && selectedRide.booked_passengers.length > 0 ? (
               <div className="ride-detail-passengers">

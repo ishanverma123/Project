@@ -347,6 +347,7 @@
   padding: 1.2rem 1.3rem 1.3rem;
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
 }
 
 .inquiry-modal-header {
@@ -736,6 +737,7 @@
 
 .ride-detail-modal {
   width: min(620px, 100% - 2rem);
+  max-height: 88vh;
   border-radius: 20px;
   border: 1px solid #dbe5f2;
   background:
@@ -744,7 +746,7 @@
   box-shadow:
     0 28px 80px rgba(15, 23, 42, 0.35),
     inset 0 1px 0 rgba(255, 255, 255, 0.75);
-  overflow: hidden;
+  overflow-y: auto;
   animation: rideModalIn 0.25s ease-out;
 }
 
@@ -756,6 +758,9 @@
 }
 
 .ride-detail-modal .inquiry-modal-header {
+  position: sticky;
+  top: -1.2rem;
+  z-index: 2;
   margin: -1.2rem -1.3rem 1rem;
   padding: 1rem 1.2rem 0.95rem;
   background: linear-gradient(110deg, #0f172a 0%, #1d4ed8 62%, #0ea5e9 100%);
@@ -1472,6 +1477,222 @@
   font-size: 1.35rem;
   font-weight: 700;
   color: #0f172a;
+}
+
+/* UI refresh layer */
+.page {
+  max-width: 1240px;
+}
+
+.panel {
+  border-radius: 14px;
+  border: 1px solid #dce6f2;
+  background: #ffffff;
+  box-shadow: 0 14px 30px rgba(16, 33, 58, 0.08);
+}
+
+.dashboard-shell,
+.property-detail-shell {
+  background: transparent;
+  padding-top: 0.9rem;
+}
+
+.home-hero {
+  border: 1px solid #dce6f2;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 18px 40px rgba(14, 33, 61, 0.14);
+}
+
+.home-hero-overlay {
+  background:
+    linear-gradient(115deg, rgba(20, 35, 59, 0.8), rgba(31, 74, 122, 0.65) 48%, rgba(243, 111, 69, 0.45));
+}
+
+.home-hero-content h1 {
+  color: #f8fbff;
+  font-size: clamp(1.9rem, 3.2vw, 2.7rem);
+}
+
+.home-hero-content p {
+  color: #d9e7f7;
+}
+
+.home-hero-search {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 14px;
+  padding: 0.55rem;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+.home-hero-search input {
+  border-radius: 10px;
+  border-color: #dce6f2;
+}
+
+.home-hero-search button {
+  box-shadow: none;
+}
+
+.property-cards {
+  grid-template-columns: repeat(auto-fill, minmax(315px, 1fr));
+  gap: 1rem;
+}
+
+.property-card {
+  border-radius: 16px;
+  border: 1px solid #dce6f2;
+  background: #ffffff;
+  box-shadow: 0 14px 28px rgba(16, 33, 58, 0.1);
+}
+
+.property-card-clickable:hover,
+.property-card-clickable:focus-visible {
+  transform: translateY(-3px);
+  border-color: #b6c9de;
+  box-shadow: 0 20px 36px rgba(16, 33, 58, 0.14);
+}
+
+.property-card-image {
+  height: 138px;
+}
+
+.property-card-body {
+  padding: 0.82rem 0.9rem 0.88rem;
+}
+
+.property-card-body h3 {
+  font-size: 1rem;
+  margin-bottom: 0.2rem;
+  color: #0f2338;
+}
+
+.property-location {
+  color: #1e3550;
+  font-size: 0.93rem;
+}
+
+.property-address,
+.property-meta {
+  color: #62748b;
+  font-size: 0.8rem;
+}
+
+.fare-badge {
+  font-size: 0.72rem;
+  padding: 0.2rem 0.55rem;
+}
+
+.fare-badge-higher {
+  color: #8a4b15;
+  background: #fff2df;
+  border-color: #ffd7aa;
+}
+
+.fare-badge-lower {
+  color: #0d5f48;
+  background: #dcfce7;
+  border-color: #a7f3d0;
+}
+
+.fare-badge-equal {
+  color: #475569;
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.booking-inline-input {
+  background: #f7faff;
+  color: #1c3551;
+  border: 1px solid #d0deee;
+  font-size: 0.82rem;
+  min-width: 110px;
+}
+
+.property-card-secondary-btn,
+.button.secondary {
+  background: #ffffff;
+  color: #18304b;
+  border: 1px solid #cfddec;
+  box-shadow: none;
+}
+
+.property-card-secondary-btn:hover,
+.button.secondary:hover {
+  background: #f2f7fd;
+}
+
+.landlord-cards-grid {
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+}
+
+.landlord-card {
+  border-radius: 15px;
+  border: 1px solid #dce6f2;
+  box-shadow: 0 14px 28px rgba(16, 33, 58, 0.09);
+}
+
+.landlord-card .property-card-image {
+  height: 126px;
+}
+
+.landlord-card-top h3 {
+  font-size: 0.98rem;
+}
+
+.price-chip {
+  background: #e9f2fb;
+  color: #1f4a7a;
+  border: 1px solid #c5d9ee;
+}
+
+.inquiry-item {
+  border-radius: 10px;
+  border: 1px solid #dce6f2;
+  background: #fbfdff;
+}
+
+.dashboard-header h1,
+.property-detail-header h1 {
+  font-size: clamp(1.35rem, 2.4vw, 2rem);
+  color: #10273f;
+}
+
+.dashboard-header-actions .button,
+.property-detail-price .button,
+.create-property-actions .button {
+  min-height: 36px;
+  font-size: 0.84rem;
+  padding: 0.42rem 0.82rem;
+}
+
+.ride-detail-modal {
+  border: 1px solid #d4e2f2;
+  box-shadow: 0 24px 60px rgba(15, 34, 59, 0.25);
+}
+
+.ride-detail-grid p {
+  font-size: 0.84rem;
+}
+
+.ride-fare-breakdown,
+.ride-detail-passengers,
+.booking-timeline {
+  background: #f8fbff;
+  border-color: #dbe7f4;
+}
+
+@media (max-width: 900px) {
+  .property-cards {
+    grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+  }
+
+  .dashboard-page,
+  .landlord-dashboard,
+  .profile-page,
+  .home-page-inner {
+    padding-inline: 0.5rem;
+  }
 }
 
 .profile-summary-card h2 {
