@@ -103,7 +103,7 @@ export default function SignIn() {
             </button>
           </form>
           <p className="auth-switch">
-            Don&apos;t have an account? <Link to="/">Sign up</Link>
+            Don&apos;t have an account? <Link to="/signup">Sign up</Link>
           </p>
         </div>
       </div>

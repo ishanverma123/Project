@@ -9,7 +9,7 @@ export default function Layout() {
   const { user, logout } = useAuth()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
-  const isAuthPage = location.pathname === '/' || location.pathname === '/signin'
+  const isAuthPage = location.pathname === '/' || location.pathname === '/signin' || location.pathname === '/signup'
   const homeHref = user?.role === 'driver' ? '/dashboard' : '/home'
 
   const handleSignOut = async () => {
@@ -53,16 +53,16 @@ export default function Layout() {
               </button>
             </>
           ) : isAuthPage ? (
-            location.pathname === '/' ? (
+            location.pathname === '/signup' ? (
               <Link to="/signin" onClick={handleNavItemClick}>Sign in</Link>
             ) : (
-              <Link to="/" onClick={handleNavItemClick}>Sign up</Link>
+              <Link to="/signup" onClick={handleNavItemClick}>Sign up</Link>
             )
           ) : (
             <>
-              <Link to="/home" onClick={handleNavItemClick}>Home</Link>
-              <Link to="/dashboard" onClick={handleNavItemClick}>Dashboard</Link>
+              <Link to="/" onClick={handleNavItemClick}>Home</Link>
               <Link to="/signin" onClick={handleNavItemClick}>Sign in</Link>
+              <Link to="/signup" onClick={handleNavItemClick}>Sign up</Link>
             </>
           )}
         </nav>

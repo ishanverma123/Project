@@ -45,8 +45,9 @@ body {
   overflow-x: hidden;
   color: var(--text);
   background:
-    radial-gradient(1200px 500px at 10% -10%, rgba(31, 74, 122, 0.16), transparent 60%),
-    radial-gradient(900px 450px at 100% 0%, rgba(243, 111, 69, 0.13), transparent 62%),
+    radial-gradient(1200px 500px at 8% -10%, rgba(31, 74, 122, 0.2), transparent 60%),
+    radial-gradient(950px 460px at 100% 0%, rgba(243, 111, 69, 0.16), transparent 62%),
+    radial-gradient(880px 430px at 42% 110%, rgba(125, 211, 252, 0.12), transparent 66%),
     #f4f8ff;
 }
 
