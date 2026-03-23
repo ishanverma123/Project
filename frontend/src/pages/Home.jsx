@@ -200,7 +200,7 @@ export default function Home() {
 
       <div className="page home-page-inner">
         <section className="home-section-header">
-          <h2>Available rides</h2>
+          <h2 style={{color:"grey"}}>Available rides</h2>
           <p>See driver details, seats left, and booked passengers before reserving your seat.</p>
         </section>
         {error && <div className="panel-error" role="alert">{error}</div>}
