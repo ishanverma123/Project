@@ -7,9 +7,13 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rental_core_engine.notification_engine import NotificationEngine
 
 from .models import CustomUser
 from .serializers import LoginSerializer, RegisterSerializer, UserSerializer, UserUpdateSerializer
+
+
+notification_engine = NotificationEngine()
 
 
 class RegisterView(APIView):
@@ -20,6 +24,16 @@ class RegisterView(APIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
         login(request, user)
+        notification_engine.notify_user(
+            user,
+            subject='Welcome to Smart Carpool',
+            message=(
+                f"Hi {user.first_name or user.username},\n\n"
+                "Your account was created successfully.\n"
+                "You can now search rides, publish rides, and manage bookings.\n\n"
+                "- Smart Carpool"
+            ),
+        )
         return Response(
             UserSerializer(user).data,
             status=status.HTTP_201_CREATED,
@@ -34,6 +48,18 @@ class LoginView(APIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data["user"]
         login(request, user)
+        ip_address = request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR', 'unknown'))
+        notification_engine.notify_user(
+            user,
+            subject='Sign-in detected on your Smart Carpool account',
+            message=(
+                f"Hi {user.first_name or user.username},\n\n"
+                "We detected a new sign-in to your account.\n"
+                f"IP Address: {ip_address}\n\n"
+                "If this was not you, please reset your password immediately.\n\n"
+                "- Smart Carpool"
+            ),
+        )
         return Response(UserSerializer(user).data)
 
 

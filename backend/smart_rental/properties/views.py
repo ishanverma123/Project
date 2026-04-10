@@ -1,9 +1,14 @@
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.exceptions import PermissionDenied, ValidationError
+from rental_core_engine.notification_engine import NotificationEngine
+from users.models import CustomUser
 
 from .models import Property, PropertyInquiry
 from .serializers import PropertyInquirySerializer, PropertySerializer
+
+
+notification_engine = NotificationEngine()
 
 
 class PropertyViewSet(ModelViewSet):
@@ -32,7 +37,29 @@ class PropertyViewSet(ModelViewSet):
         if not hasattr(self.request.user, 'role') or self.request.user.role != 'driver':
             raise PermissionDenied('Only drivers can create rides.')
         try:
-            serializer.save(driver=self.request.user)
+            ride = serializer.save(driver=self.request.user)
+            notification_engine.notify_user(
+                self.request.user,
+                subject='Your ride is live on Smart Carpool',
+                message=(
+                    f"Hi {self.request.user.first_name or self.request.user.username},\n\n"
+                    f"Your ride \"{ride.title}\" from {ride.from_city} to {ride.to_city} has been published.\n"
+                    f"Departure: {ride.departure_time}\n\n"
+                    "- Smart Carpool"
+                ),
+            )
+
+            travellers = CustomUser.objects.filter(role='traveller').exclude(id=self.request.user.id)
+            ride_msg = (
+                "A new ride has been published on Smart Carpool.\n\n"
+                f"Route: {ride.from_city} to {ride.to_city}\n"
+                f"Title: {ride.title}\n"
+                f"Price per seat: ${ride.price_per_seat}\n"
+                f"Departure: {ride.departure_time}\n\n"
+                "Open the app to view and book this ride."
+            )
+            if not notification_engine.notify_broadcast('New ride published on Smart Carpool', ride_msg):
+                notification_engine.notify_users(travellers, 'New ride published on Smart Carpool', ride_msg)
         except Exception as exc:
             raise ValidationError(
                 {'image': [f'Property could not be created because image upload failed: {exc}']}

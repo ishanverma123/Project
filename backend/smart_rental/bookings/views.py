@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.viewsets import ModelViewSet
+from rental_core_engine.notification_engine import NotificationEngine
 
 from .models import Booking, BookingNegotiationEvent
 from .serializers import BookingSerializer
@@ -10,6 +11,7 @@ from rental_core_engine.pricing_engine import PricingEngine
 
 
 pricing_engine = PricingEngine()
+notification_engine = NotificationEngine()
 
 
 class BookingViewSet(ModelViewSet):
@@ -78,6 +80,16 @@ class BookingViewSet(ModelViewSet):
                 f"Driver proposed a counter-offer of ${updated.driver_counter_offer_per_seat} per seat.",
                 {'driver_counter_offer_per_seat': str(updated.driver_counter_offer_per_seat)},
             )
+            notification_engine.notify_user(
+                updated.user,
+                subject='Driver sent a counter-offer for your booking',
+                message=(
+                    f"Your booking for \"{updated.property.title}\" received a driver counter-offer.\n\n"
+                    f"Counter-offer: ${updated.driver_counter_offer_per_seat} per seat\n"
+                    f"Requested seats: {updated.passenger_count}\n\n"
+                    "Open Smart Carpool to accept or negotiate further."
+                ),
+            )
         elif new_status == Booking.STATUS_APPROVED:
             self._log_event(
                 updated,
@@ -85,12 +97,28 @@ class BookingViewSet(ModelViewSet):
                 BookingNegotiationEvent.EVENT_DRIVER_APPROVED,
                 'Driver approved this booking request.',
             )
+            notification_engine.notify_user(
+                updated.user,
+                subject='Your booking was approved',
+                message=(
+                    f"Great news! Your booking for \"{updated.property.title}\" was approved by the driver.\n\n"
+                    "Open Smart Carpool to view details."
+                ),
+            )
         elif new_status == Booking.STATUS_REJECTED:
             self._log_event(
                 updated,
                 self.request.user,
                 BookingNegotiationEvent.EVENT_DRIVER_REJECTED,
                 'Driver rejected this booking request.',
+            )
+            notification_engine.notify_user(
+                updated.user,
+                subject='Your booking was declined',
+                message=(
+                    f"Your booking for \"{updated.property.title}\" was declined by the driver.\n\n"
+                    "You can browse other rides in Smart Carpool."
+                ),
             )
 
     def _update_by_traveller(self, serializer, booking, new_status):
@@ -108,6 +136,14 @@ class BookingViewSet(ModelViewSet):
                 BookingNegotiationEvent.EVENT_TRAVELLER_ACCEPTED_COUNTER,
                 f"Traveller accepted the driver counter-offer of ${updated.driver_counter_offer_per_seat} per seat.",
                 {'agreed_price_per_seat': str(updated.driver_counter_offer_per_seat)},
+            )
+            notification_engine.notify_user(
+                updated.property.driver,
+                subject='Traveller accepted your counter-offer',
+                message=(
+                    f"The traveller accepted your counter-offer for \"{updated.property.title}\".\n\n"
+                    f"Final agreed price: ${updated.driver_counter_offer_per_seat} per seat"
+                ),
             )
             return
 
@@ -129,6 +165,16 @@ class BookingViewSet(ModelViewSet):
             BookingNegotiationEvent.EVENT_TRAVELLER_COUNTERED,
             f"Traveller submitted a new bid of ${updated.requested_bid_per_seat} per seat.",
             {'requested_bid_per_seat': str(updated.requested_bid_per_seat)},
+        )
+        notification_engine.notify_user(
+            updated.property.driver,
+            subject='Traveller submitted a new bid',
+            message=(
+                f"A traveller submitted a new bid for \"{updated.property.title}\".\n\n"
+                f"Bid: ${updated.requested_bid_per_seat} per seat\n"
+                f"Requested seats: {updated.passenger_count}\n\n"
+                "Open Smart Carpool to respond."
+            ),
         )
 
     def create(self, request, *args, **kwargs):
@@ -216,6 +262,28 @@ class BookingViewSet(ModelViewSet):
                 'platform_suggested_price_per_seat': suggestion['suggested_price_per_seat'],
                 'requested_bid_per_seat': requested_bid,
             },
+        )
+        notification_engine.notify_user(
+            user,
+            subject='Booking request submitted',
+            message=(
+                f"Your booking request for \"{ride.title}\" was submitted successfully.\n\n"
+                f"Route: {ride.from_city} to {ride.to_city}\n"
+                f"Seats requested: {passenger_count}\n"
+                f"Bid per seat: ${requested_bid if requested_bid is not None else ride.price_per_seat}\n\n"
+                "You will be notified when the driver responds."
+            ),
+        )
+        notification_engine.notify_user(
+            ride.driver,
+            subject='New booking request received',
+            message=(
+                f"You received a new booking request for \"{ride.title}\".\n\n"
+                f"Traveller: {user.first_name or user.username}\n"
+                f"Seats requested: {passenger_count}\n"
+                f"Bid per seat: ${requested_bid if requested_bid is not None else ride.price_per_seat}\n\n"
+                "Open Smart Carpool to approve, reject, or counter."
+            ),
         )
         headers = self.get_success_headers(serializer.data)
         data = dict(serializer.data)

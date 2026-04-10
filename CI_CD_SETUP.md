@@ -44,6 +44,17 @@ Optional S3 secrets:
 - `AWS_SESSION_TOKEN` (needed for temporary STS credentials)
 - `AWS_S3_CUSTOM_DOMAIN` (CloudFront/custom media domain)
 
+Optional SNS notification secrets (for account/ride/booking emails):
+- `SNS_NOTIFICATIONS_ENABLED`: `true` or `1`
+- `AWS_REGION`: AWS region for SNS (for example `ap-south-1`)
+- `SNS_USER_TOPIC_PREFIX`: per-user topic prefix (example `smart-rental-user`)
+- `SNS_BROADCAST_TOPIC_ARN`: optional shared topic ARN for "new ride published" broadcasts
+
+Notes for environments without IAM Roles:
+- Use IAM user access keys with least-privilege SNS permissions.
+- Reuse existing `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` secrets.
+- Keep credentials only in GitHub secrets / `.env`, never commit them.
+
 Optional secret:
 - `PYTHON_VENV_PATH`: absolute path to Python virtualenv (example: `/home/ubuntu/venvs/smart-rental`)
 
@@ -73,6 +84,7 @@ Notes:
 - `settings.py` already reads that `.env`, so backend picks up updated S3 values automatically.
 - Workflow now auto-installs `nodejs` and `npm` on EC2 if missing before frontend build.
 - Backend has `STATIC_ROOT` configured, so `collectstatic` can run safely in production.
+- SNS notifications are best-effort; API requests still succeed if SNS is disabled or temporarily unavailable.
 
 ## 3) Sudo permissions needed by workflow
 
