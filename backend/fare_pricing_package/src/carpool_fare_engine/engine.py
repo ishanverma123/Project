@@ -25,6 +25,7 @@ def calculate_fare(config: FareConfig, request: FareRequest) -> FareResult:
         if request.fuel_surcharge_per_km is not None
         else float(policy["fuel_surcharge_per_km"])
     )
+    
     promo_discount_pct = (
         float(request.promo_discount_pct)
         if request.promo_discount_pct is not None

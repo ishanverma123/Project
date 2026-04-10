@@ -13,7 +13,8 @@ venv/
 # Django media and local DB
 backend/smart_rental/media/
 backend/smart_rental/db.sqlite3
-
+backend/fare_pricing_package/.publish-venv
+backend/fare_pricing_package/dist
 # Frontend
 frontend/node_modules/
 frontend/dist/
