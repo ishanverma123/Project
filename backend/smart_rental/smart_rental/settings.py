@@ -78,6 +78,11 @@ ALLOWED_HOSTS = _env_list(
     default=['localhost', '127.0.0.1'] if DEBUG else [],
 )
 
+# Load balancer / reverse proxy compatibility.
+USE_X_FORWARDED_HOST = _env_bool('USE_X_FORWARDED_HOST', True)
+if _env_bool('USE_SECURE_PROXY_SSL_HEADER', True):
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 
 # Application definition
 

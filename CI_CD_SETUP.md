@@ -26,6 +26,12 @@ Required backend app/config secrets:
 - `DJANGO_DEBUG` (recommended: `false` in production)
 - `DJANGO_ALLOWED_HOSTS` (comma-separated, example: `yourdomain.com,3.221.54.164`)
 
+Recommended when using ALB / custom frontend host:
+- `CORS_ALLOWED_ORIGINS` (comma-separated full origins, example: `http://smart-rental-load-xxxx.us-east-1.elb.amazonaws.com`)
+- `CSRF_TRUSTED_ORIGINS` (comma-separated full origins, example: `http://smart-rental-load-xxxx.us-east-1.elb.amazonaws.com`)
+- `CORS_ALLOW_ALL_ORIGINS` (`false` in production)
+- `CORS_ALLOW_CREDENTIALS` (`true` for session/cookie auth)
+
 Required database secrets:
 - `DB_NAME`
 - `DB_USER`
