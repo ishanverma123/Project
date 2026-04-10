@@ -48,6 +48,16 @@ def _env_list(name: str, default: Optional[List[str]] = None) -> List[str]:
     return default or []
 
 
+def _env_int(name: str, default: int) -> int:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
 _load_dotenv(BASE_DIR / '.env')
 
 # Toggle S3 media storage with env var. Keep local storage as fallback.
@@ -153,6 +163,11 @@ DATABASES = {
         'PASSWORD': os.getenv('DB_PASSWORD', ''),
         'HOST': os.getenv('DB_HOST', '127.0.0.1'),
         'PORT': os.getenv('DB_PORT', '5432'),
+        'CONN_MAX_AGE': _env_int('DB_CONN_MAX_AGE', 60),
+        'OPTIONS': {
+            # Fail fast when DB is unreachable so Nginx does not surface long 504 timeouts.
+            'connect_timeout': _env_int('DB_CONNECT_TIMEOUT', 5),
+        },
     }
 }
 
