@@ -119,9 +119,26 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
 ]
 
+
+def _host_to_origins(host: str) -> List[str]:
+    clean = host.strip()
+    if not clean or clean == '*':
+        return []
+    if clean.startswith('http://') or clean.startswith('https://'):
+        return [clean]
+    return [f'http://{clean}', f'https://{clean}']
+
+
+_derived_origins: List[str] = []
+for _host in ALLOWED_HOSTS:
+    _derived_origins.extend(_host_to_origins(_host))
+
+# De-duplicate while preserving order.
+_derived_origins = list(dict.fromkeys(_derived_origins))
+
 CORS_ALLOW_ALL_ORIGINS = _env_bool('CORS_ALLOW_ALL_ORIGINS', DEBUG)
 CORS_ALLOW_CREDENTIALS = _env_bool('CORS_ALLOW_CREDENTIALS', True)  # required for cookie (session) auth from frontend
-CORS_ALLOWED_ORIGINS = _env_list('CORS_ALLOWED_ORIGINS')
+CORS_ALLOWED_ORIGINS = _env_list('CORS_ALLOWED_ORIGINS', default=_derived_origins)
 
 # Allow CSRF-protected POSTs from configured origins.
 CSRF_TRUSTED_ORIGINS = _env_list(
@@ -129,7 +146,7 @@ CSRF_TRUSTED_ORIGINS = _env_list(
     default=[
         'http://localhost:3000',
         'http://127.0.0.1:3000',
-    ] if DEBUG else [],
+    ] if DEBUG else _derived_origins,
 )
 
 ROOT_URLCONF = 'smart_rental.urls'
