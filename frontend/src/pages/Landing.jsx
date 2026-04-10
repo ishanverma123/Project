@@ -6,7 +6,7 @@ export default function Landing() {
       <section className="landing-hero page">
         <div className="landing-hero-copy">
           <p className="landing-kicker">Urban Rides Reimagined</p>
-          <h1>Smart Carpool for safer, cleaner, and better-priced city trips.</h1>
+          <h1>Smart Carpool for safer, cleaner & better-priced city trips.</h1>
           <p className="landing-subtitle">
             Compare smart fare suggestions, book reliable rides, and negotiate transparently in one polished platform.
           </p>
