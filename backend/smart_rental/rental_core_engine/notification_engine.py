@@ -2,9 +2,11 @@ import hashlib
 import logging
 import os
 import re
+import threading
 from typing import Iterable, Optional
 
 import boto3
+from botocore.config import Config
 
 
 logger = logging.getLogger(__name__)
@@ -20,11 +22,13 @@ def _env_bool(name: str, default: bool = False) -> bool:
 class NotificationEngine:
     def __init__(self):
         self.enabled = _env_bool('SNS_NOTIFICATIONS_ENABLED', False)
+        self.async_mode = _env_bool('SNS_ASYNC_MODE', True)
         self.region_name = os.getenv('AWS_REGION') or os.getenv('AWS_DEFAULT_REGION') or os.getenv('AWS_S3_REGION_NAME')
         self.broadcast_topic_arn = os.getenv('SNS_BROADCAST_TOPIC_ARN', '').strip()
         self.user_topic_prefix = os.getenv('SNS_USER_TOPIC_PREFIX', 'smart-rental-user')
         self._client = None
         self._user_topic_cache = {}
+        self._subscription_cache = set()
 
     @property
     def client(self):
@@ -32,6 +36,12 @@ class NotificationEngine:
             kwargs = {}
             if self.region_name:
                 kwargs['region_name'] = self.region_name
+            # Keep notification calls fail-fast so request handlers do not hang.
+            kwargs['config'] = Config(
+                connect_timeout=2,
+                read_timeout=3,
+                retries={'max_attempts': 1, 'mode': 'standard'},
+            )
             self._client = boto3.client('sns', **kwargs)
         return self._client
 
@@ -73,7 +83,11 @@ class NotificationEngine:
                 return False
 
     def _ensure_email_subscription(self, topic_arn: str, email: str) -> None:
+        cache_key = f'{topic_arn}::{email.lower().strip()}'
+        if cache_key in self._subscription_cache:
+            return
         if self._has_email_subscription(topic_arn, email):
+            self._subscription_cache.add(cache_key)
             return
         self.client.subscribe(
             TopicArn=topic_arn,
@@ -81,6 +95,7 @@ class NotificationEngine:
             Endpoint=email,
             ReturnSubscriptionArn=True,
         )
+        self._subscription_cache.add(cache_key)
 
     def _publish_to_topic(self, topic_arn: str, subject: str, message: str) -> bool:
         self.client.publish(
@@ -90,6 +105,13 @@ class NotificationEngine:
         )
         return True
 
+    def _notify_user_sync(self, email: str, subject: str, message: str) -> bool:
+        topic_arn = self._get_or_create_user_topic(email)
+        if not topic_arn:
+            return False
+        self._ensure_email_subscription(topic_arn, email)
+        return self._publish_to_topic(topic_arn, subject, message)
+
     def notify_user(self, user, subject: str, message: str) -> bool:
         if not self.enabled:
             return False
@@ -98,11 +120,14 @@ class NotificationEngine:
             return False
 
         try:
-            topic_arn = self._get_or_create_user_topic(email)
-            if not topic_arn:
-                return False
-            self._ensure_email_subscription(topic_arn, email)
-            return self._publish_to_topic(topic_arn, subject, message)
+            if self.async_mode:
+                threading.Thread(
+                    target=self._notify_user_sync,
+                    args=(email, subject, message),
+                    daemon=True,
+                ).start()
+                return True
+            return self._notify_user_sync(email, subject, message)
         except Exception as exc:
             logger.warning('SNS notify_user failed for %s: %s', email, exc)
             return False
