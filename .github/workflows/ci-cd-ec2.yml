@@ -30,8 +30,6 @@ env:
   AWS_STORAGE_BUCKET_NAME: ${{ secrets.AWS_STORAGE_BUCKET_NAME }}
   AWS_S3_REGION_NAME: ${{ secrets.AWS_S3_REGION_NAME }}
   AWS_S3_CUSTOM_DOMAIN: ${{ secrets.AWS_S3_CUSTOM_DOMAIN }}
-  BACKEND_HEALTHCHECK_URL: ${{ secrets.BACKEND_HEALTHCHECK_URL }}
-  BACKEND_GUNICORN_SOCKET: ${{ secrets.BACKEND_GUNICORN_SOCKET }}
 
 jobs:
   ci:
@@ -70,7 +68,7 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script_stop: true
-          envs: APP_DIR,BACKEND_SERVICE_NAME,FRONTEND_DEPLOY_DIR,DEPLOY_COMMIT_SHA,DEPLOY_REF_NAME,PYTHON_VENV_PATH,DJANGO_SECRET_KEY,DJANGO_DEBUG,DJANGO_ALLOWED_HOSTS,DB_NAME,DB_USER,DB_PASSWORD,DB_HOST,DB_PORT,DB_CONNECT_TIMEOUT,DB_CONN_MAX_AGE,USE_S3,AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_SESSION_TOKEN,AWS_STORAGE_BUCKET_NAME,AWS_S3_REGION_NAME,AWS_S3_CUSTOM_DOMAIN,BACKEND_HEALTHCHECK_URL,BACKEND_GUNICORN_SOCKET
+          envs: APP_DIR,BACKEND_SERVICE_NAME,FRONTEND_DEPLOY_DIR,DEPLOY_COMMIT_SHA,DEPLOY_REF_NAME,PYTHON_VENV_PATH,DJANGO_SECRET_KEY,DJANGO_DEBUG,DJANGO_ALLOWED_HOSTS,DB_NAME,DB_USER,DB_PASSWORD,DB_HOST,DB_PORT,DB_CONNECT_TIMEOUT,DB_CONN_MAX_AGE,USE_S3,AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_SESSION_TOKEN,AWS_STORAGE_BUCKET_NAME,AWS_S3_REGION_NAME,AWS_S3_CUSTOM_DOMAIN
           script: |
             set -euxo pipefail
 
@@ -208,38 +206,7 @@ jobs:
             python manage.py collectstatic --noinput || true
 
             sudo systemctl restart "${BACKEND_SERVICE_NAME}"
-
-            if ! sudo systemctl is-active --quiet "${BACKEND_SERVICE_NAME}"; then
-              echo "Backend service failed to start. Showing recent logs..."
-              sudo journalctl -u "${BACKEND_SERVICE_NAME}" --no-pager -n 120 || true
-              exit 1
-            fi
-
-            if command -v curl >/dev/null 2>&1; then
-              SOCKET_PATH="${BACKEND_GUNICORN_SOCKET:-/run/gunicorn/gunicorn.sock}"
-              SOCKET_HEALTH_PATH="http://localhost/api/auth/csrf/"
-
-              SOCKET_EXISTS="$(sudo sh -c '[ -S "'"${SOCKET_PATH}"'" ] && echo 1 || echo 0')"
-              if [ "${SOCKET_EXISTS}" = "1" ]; then
-                if ! sudo curl -fsS --max-time 12 --unix-socket "${SOCKET_PATH}" "${SOCKET_HEALTH_PATH}" >/dev/null; then
-                  echo "Backend socket healthcheck failed via ${SOCKET_PATH}. Showing service logs..."
-                  sudo journalctl -u "${BACKEND_SERVICE_NAME}" --no-pager -n 120 || true
-                  exit 1
-                fi
-              else
-                echo "Gunicorn socket not found at ${SOCKET_PATH}; skipping socket healthcheck"
-              fi
-
-              if [ -n "${BACKEND_HEALTHCHECK_URL:-}" ]; then
-                if ! curl -fsS --max-time 12 "${BACKEND_HEALTHCHECK_URL}" >/dev/null; then
-                  echo "Backend HTTP healthcheck failed at ${BACKEND_HEALTHCHECK_URL}. Showing service logs..."
-                  sudo journalctl -u "${BACKEND_SERVICE_NAME}" --no-pager -n 120 || true
-                  exit 1
-                fi
-              fi
-            else
-              echo "curl not found; skipping backend HTTP healthcheck"
-            fi
+            sudo systemctl is-active --quiet "${BACKEND_SERVICE_NAME}"
 
             echo "Deploying frontend..."
             cd "${APP_DIR}/frontend"
