@@ -219,7 +219,8 @@ jobs:
               SOCKET_PATH="${BACKEND_GUNICORN_SOCKET:-/run/gunicorn/gunicorn.sock}"
               SOCKET_HEALTH_PATH="http://localhost/api/auth/csrf/"
 
-              if [ -S "${SOCKET_PATH}" ]; then
+              SOCKET_EXISTS="$(sudo sh -c '[ -S "'"${SOCKET_PATH}"'" ] && echo 1 || echo 0')"
+              if [ "${SOCKET_EXISTS}" = "1" ]; then
                 if ! sudo curl -fsS --max-time 12 --unix-socket "${SOCKET_PATH}" "${SOCKET_HEALTH_PATH}" >/dev/null; then
                   echo "Backend socket healthcheck failed via ${SOCKET_PATH}. Showing service logs..."
                   sudo journalctl -u "${BACKEND_SERVICE_NAME}" --no-pager -n 120 || true
