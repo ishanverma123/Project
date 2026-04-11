@@ -61,6 +61,16 @@ Notes for environments without IAM Roles:
 - Reuse existing `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` secrets.
 - Keep credentials only in GitHub secrets / `.env`, never commit them.
 
+Optional CloudWatch logging secrets (for centralized error logging):
+- `CLOUDWATCH_LOGGING_ENABLED`: `true` or `1` (optional, default: `false`)
+- `CLOUDWATCH_LOG_GROUP`: CloudWatch log group name (example: `smart-rental-backend`)
+- `CLOUDWATCH_LOG_STREAM`: log stream within the group (example: `django-app`)
+
+Notes for CloudWatch:
+- Requires IAM permissions for `logs:CreateLogGroup`, `logs:CreateLogStream`, `logs:PutLogEvents` on resources matching `arn:aws:logs:*:*:log-group:/aws/ec2/smart-rental*`
+- Reuses existing `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` secrets.
+- See [CLOUDWATCH_LOGGING_SETUP.md](CLOUDWATCH_LOGGING_SETUP.md) for full setup and querying logs.
+
 Optional secret:
 - `PYTHON_VENV_PATH`: absolute path to Python virtualenv (example: `/home/ubuntu/venvs/smart-rental`)
 

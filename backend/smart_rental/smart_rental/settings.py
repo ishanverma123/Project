@@ -277,3 +277,105 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.AllowAny',  # per-view override for protected endpoints
     ],
 }
+
+# CloudWatch Logging Configuration
+CLOUDWATCH_ENABLED = _env_bool('CLOUDWATCH_LOGGING_ENABLED', False)
+CLOUDWATCH_LOG_GROUP = os.getenv('CLOUDWATCH_LOG_GROUP', 'smart-rental-backend')
+CLOUDWATCH_LOG_STREAM = os.getenv('CLOUDWATCH_LOG_STREAM', 'django-app')
+AWS_REGION_NAME = os.getenv('AWS_REGION', 'us-east-1')
+
+# Django Logging Configuration
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'standard': {
+            'format': '[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(message)s',
+            'datefmt': '%Y-%m-%d %H:%M:%S'
+        },
+        'detailed': {
+            'format': '[%(asctime)s] %(levelname)s [%(name)s:%(funcName)s():%(lineno)s] %(message)s',
+            'datefmt': '%Y-%m-%d %H:%M:%S'
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'standard'
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'django.request': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'django.db.backends': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'smart_rental': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'bookings': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'properties': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'users': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+    },
+}
+
+# Add CloudWatch handler if enabled and watchtower is installed
+if CLOUDWATCH_ENABLED:
+    try:
+        import watchtower
+        LOGGING['handlers']['cloudwatch'] = {
+            'level': 'DEBUG',
+            'class': 'watchtower.CloudWatchLogHandler',
+            'log_group': CLOUDWATCH_LOG_GROUP,
+            'stream_name': CLOUDWATCH_LOG_STREAM,
+            'region_name': AWS_REGION_NAME,
+            'formatter': 'detailed',
+            'boto3_client_kwargs': {'region_name': AWS_REGION_NAME},
+        }
+        # Add cloudwatch to all loggers
+        for logger_name in LOGGING['loggers']:
+            if 'cloudwatch' not in LOGGING['loggers'][logger_name]['handlers']:
+                LOGGING['loggers'][logger_name]['handlers'].append('cloudwatch')
+    except (ImportError, Exception) as e:
+        # If watchtower not available or CloudWatch auth fails, fall back to file logging
+        import warnings
+        log_file = BASE_DIR / 'logs' / 'django.log'
+        log_file.parent.mkdir(exist_ok=True)
+        LOGGING['handlers']['file'] = {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': str(log_file),
+            'maxBytes': 10485760,  # 10MB
+            'backupCount': 5,
+            'formatter': 'detailed',
+        }
+        # Add file handler to all loggers as fallback
+        for logger_name in LOGGING['loggers']:
+            if 'file' not in LOGGING['loggers'][logger_name]['handlers']:
+                LOGGING['loggers'][logger_name]['handlers'].append('file')
+        warnings.warn(f'CloudWatch logging failed ({e}). Falling back to file logging at {log_file}')
