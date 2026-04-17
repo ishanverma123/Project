@@ -18,8 +18,18 @@ from django.contrib import admin
 from django.urls import include, path
 from django.conf import settings
 from django.conf.urls.static import static
+from django.http import JsonResponse
+
+# Health check endpoint for ALB
+def health_check(request):
+    """Health check endpoint for ALB. Returns 200 if backend is alive."""
+    return JsonResponse({
+        'status': 'healthy',
+        'service': 'smart-rental-backend'
+    })
 
 urlpatterns = [
+    path('api/health/', health_check, name='health_check'),
     path('admin/', admin.site.urls),
     path('api/', include('api_router'))
 ]
