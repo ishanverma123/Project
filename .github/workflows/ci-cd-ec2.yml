@@ -214,7 +214,7 @@ jobs:
             python -m pip install --upgrade pip
 
             if [ -f requirements.txt ]; then
-              python -m pip install -r requirements.txt
+              python -m pip install -r requirements.txt --upgrade
             else
               echo "requirements.txt not found in backend/smart_rental; cannot install Django deps."
               exit 1
