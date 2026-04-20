@@ -5,8 +5,8 @@ from typing import Dict, Optional
 
 @dataclass
 class FareConfig:
-    base_fare: float = 30.0
-    per_km_rate: float = 8.0
+    base_fare: float = 10.0
+    per_km_rate: float = 1.0
     per_min_rate: float = 0.5
     default_distance_km: float = 10.0
     default_duration_min: float = 20.0

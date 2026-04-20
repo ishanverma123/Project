@@ -222,7 +222,7 @@ jobs:
               exit 1
             fi
 
-            FARE_ENGINE_VERSION="${FARE_ENGINE_VERSION:-0.1.0}"
+            FARE_ENGINE_VERSION="${FARE_ENGINE_VERSION:-0.2.0}"
             echo "Installing carpool-fare-engine==${FARE_ENGINE_VERSION} from PyPI"
             python -m pip install --upgrade "carpool-fare-engine==${FARE_ENGINE_VERSION}"
 
