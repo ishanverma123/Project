@@ -38,7 +38,6 @@ env:
   SNS_USER_TOPIC_PREFIX: ${{ secrets.SNS_USER_TOPIC_PREFIX }}
   SNS_BROADCAST_TOPIC_ARN: ${{ secrets.SNS_BROADCAST_TOPIC_ARN }}
   AWS_REGION: ${{ secrets.AWS_REGION }}
-  FARE_ENGINE_VERSION: ${{ secrets.FARE_ENGINE_VERSION }}
   CLOUDWATCH_LOGGING_ENABLED: ${{ secrets.CLOUDWATCH_LOGGING_ENABLED }}
   CLOUDWATCH_LOG_GROUP: ${{ secrets.CLOUDWATCH_LOG_GROUP }}
   CLOUDWATCH_LOG_STREAM: ${{ secrets.CLOUDWATCH_LOG_STREAM }}
@@ -112,7 +111,7 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script_stop: true
-          envs: APP_DIR,BACKEND_SERVICE_NAME,PYTHON_VENV_PATH,DJANGO_SECRET_KEY,DJANGO_DEBUG,DJANGO_ALLOWED_HOSTS,CORS_ALLOWED_ORIGINS,CSRF_TRUSTED_ORIGINS,CORS_ALLOW_ALL_ORIGINS,CORS_ALLOW_CREDENTIALS,DB_NAME,DB_USER,DB_PASSWORD,DB_HOST,DB_PORT,DB_CONNECT_TIMEOUT,DB_CONN_MAX_AGE,USE_S3,AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_SESSION_TOKEN,AWS_STORAGE_BUCKET_NAME,AWS_S3_REGION_NAME,AWS_S3_CUSTOM_DOMAIN,SNS_NOTIFICATIONS_ENABLED,SNS_USER_TOPIC_PREFIX,SNS_BROADCAST_TOPIC_ARN,AWS_REGION,FARE_ENGINE_VERSION
+          envs: APP_DIR,BACKEND_SERVICE_NAME,PYTHON_VENV_PATH,DJANGO_SECRET_KEY,DJANGO_DEBUG,DJANGO_ALLOWED_HOSTS,CORS_ALLOWED_ORIGINS,CSRF_TRUSTED_ORIGINS,CORS_ALLOW_ALL_ORIGINS,CORS_ALLOW_CREDENTIALS,DB_NAME,DB_USER,DB_PASSWORD,DB_HOST,DB_PORT,DB_CONNECT_TIMEOUT,DB_CONN_MAX_AGE,USE_S3,AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_SESSION_TOKEN,AWS_STORAGE_BUCKET_NAME,AWS_S3_REGION_NAME,AWS_S3_CUSTOM_DOMAIN,SNS_NOTIFICATIONS_ENABLED,SNS_USER_TOPIC_PREFIX,SNS_BROADCAST_TOPIC_ARN,AWS_REGION
           script: |
             set -euxo pipefail
             cd "${APP_DIR}/backend/smart_rental"
@@ -170,7 +169,6 @@ jobs:
             upsert_env "SNS_USER_TOPIC_PREFIX" "${SNS_USER_TOPIC_PREFIX:-smart-rental-user}"
             upsert_env "SNS_BROADCAST_TOPIC_ARN" "${SNS_BROADCAST_TOPIC_ARN:-}"
             upsert_env "AWS_REGION" "${AWS_REGION:-${AWS_S3_REGION_NAME:-}}"
-            upsert_env "FARE_ENGINE_VERSION" "${FARE_ENGINE_VERSION:-0.5.0}"
 
             if [ -z "${DJANGO_SECRET_KEY:-}" ]; then
               echo "DJANGO_SECRET_KEY secret is required"
@@ -222,10 +220,7 @@ jobs:
               exit 1
             fi
 
-            FARE_ENGINE_VERSION="${FARE_ENGINE_VERSION:-0.5.0}"
-            echo "Installing carpool-fare-engine==${FARE_ENGINE_VERSION} from PyPI"
-            python -m pip install --upgrade "carpool-fare-engine==${FARE_ENGINE_VERSION}"
-
+            # Fare engine is now installed via requirements.txt
             echo "Running Django migration checks..."
             python -c "import django; print('Django import OK:', django.get_version())"
             python -c "import carpool_fare_engine; print('Custom fare package import OK:', carpool_fare_engine.__file__)"
