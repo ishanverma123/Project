@@ -170,7 +170,7 @@ jobs:
             upsert_env "SNS_USER_TOPIC_PREFIX" "${SNS_USER_TOPIC_PREFIX:-smart-rental-user}"
             upsert_env "SNS_BROADCAST_TOPIC_ARN" "${SNS_BROADCAST_TOPIC_ARN:-}"
             upsert_env "AWS_REGION" "${AWS_REGION:-${AWS_S3_REGION_NAME:-}}"
-            upsert_env "FARE_ENGINE_VERSION" "${FARE_ENGINE_VERSION:-0.4.0}"
+            upsert_env "FARE_ENGINE_VERSION" "${FARE_ENGINE_VERSION:-0.5.0}"
 
             if [ -z "${DJANGO_SECRET_KEY:-}" ]; then
               echo "DJANGO_SECRET_KEY secret is required"
@@ -222,7 +222,7 @@ jobs:
               exit 1
             fi
 
-            FARE_ENGINE_VERSION="${FARE_ENGINE_VERSION:-0.4.0}"
+            FARE_ENGINE_VERSION="${FARE_ENGINE_VERSION:-0.5.0}"
             echo "Installing carpool-fare-engine==${FARE_ENGINE_VERSION} from PyPI"
             python -m pip install --upgrade "carpool-fare-engine==${FARE_ENGINE_VERSION}"
 

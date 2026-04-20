@@ -22,11 +22,11 @@ def resolve_policy_adjustments(
 ) -> Dict[str, float]:
     # Fuel surcharge can vary with weekday/weekend demand and fuel pressure.
     if departure_time and departure_time.weekday() >= 5:
-        fuel_surcharge_per_km = 0.35
+        fuel_surcharge_per_km = 0.08
     elif demand_multiplier >= 1.3:
-        fuel_surcharge_per_km = 0.3
+        fuel_surcharge_per_km = 0.07
     else:
-        fuel_surcharge_per_km = 0.25
+        fuel_surcharge_per_km = 0.06
 
     is_holiday = bool(departure_time and _is_fixed_holiday(departure_time))
     holiday_surcharge_pct = 12.0 if is_holiday else 0.0
