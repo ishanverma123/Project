@@ -5,13 +5,13 @@ from typing import Dict, Optional
 
 @dataclass
 class FareConfig:
-    base_fare: float = 1.0
-    per_km_rate: float = 1.0
+    base_fare: float = 0.2
+    per_km_rate: float = 0.1
     per_min_rate: float = 0.5
     default_distance_km: float = 1.0
     default_duration_min: float = 2.0
     fuel_surcharge_per_km: float = 0.2
-    time_multiplier_peak: float = 1.2
+    time_multiplier_peak: float = 1.0
     time_multiplier_offpeak: float = 1.0
     demand_surge_max: float = 2.0
 

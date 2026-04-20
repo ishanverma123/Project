@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "carpool-fare-engine"
-version = "0.3.0"
+version = "0.4.0"
 description = "Dynamic fare calculation engine for carpool platforms"
 readme = "README.md"
 requires-python = ">=3.9"
