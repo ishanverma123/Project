@@ -54,15 +54,15 @@ def _fallback_calculate_fare(config, request):
 class PricingEngine:
     def __init__(self):
         self.config = {
-            "base_fare": 25.0,
-            "per_km_rate": 8.0,
-            "per_min_rate": 0.5,
-            "default_distance_km": 12.0,
-            "default_duration_min": 25.0,
-            "fuel_surcharge_per_km": 0.25,
-            "time_multiplier_peak": 1.2,
+            "base_fare": 1.0,           # Updated from 25.0
+            "per_km_rate": 0.07,        # Updated from 8.0
+            "per_min_rate": 0.015,      # Updated from 0.5
+            "default_distance_km": 1.0,
+            "default_duration_min": 2.0,
+            "fuel_surcharge_per_km": 0.03,  # Updated from 0.25
+            "time_multiplier_peak": 1.1,    # Updated from 1.2
             "time_multiplier_offpeak": 1.0,
-            "demand_surge_max": 2.0,
+            "demand_surge_max": 1.15,       # Updated from 2.0
         }
 
     def _demand_multiplier(self, seats_left, max_passengers):
